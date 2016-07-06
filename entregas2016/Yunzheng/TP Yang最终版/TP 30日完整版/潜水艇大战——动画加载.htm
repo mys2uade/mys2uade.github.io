@@ -1,0 +1,692 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="../engine/math.js"></script>
+<script type="text/javascript" src="../engine/body.js"></script>
+<script type="text/javascript" src="../engine/world.js"></script>
+<script type="text/javascript" src="../engine/collision.js"></script>
+<script type="text/javascript" src="../engine/contact.js"></script>
+<script type="text/javascript" src="../engine/constraint.js"></script>
+<script type="text/javascript" src="../engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+// pantalla ¿ò¼Ü
+var OX = 1;
+var OY = 1;
+var DX = 126;
+var DY = 54;
+
+// posicion del mouseÊó±êÎ»ÖÃ
+var mouse_x;
+var mouse_y;
+
+var gravity = new Vector2( 0, 60 );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+var init = false;
+
+//Õ¨µ¯
+var bala_barco=[];
+var bala_p =0;
+var bala_submarino=[];
+var bala_s = 0;
+
+//Õ¨µ¯×´Ì¬ÊôÐÔ
+var BALA_EN_EL_AIRE    = 0;
+var BALA_EN_EL_PISO    = 1;
+var BALA_EXPLOTANDO    = 2;
+var BALA_BORRADA    = 3;
+var img_explosion = new Image(); 
+var total_explosion = 0.5;
+
+//×Ô½¨ÊôÐÔ
+var idqiang=999;
+var idball=998;
+var idPY=997;
+var idbarco=996;
+var idballs=995;
+var idzhangai=994;
+var barco=null;
+var submarino=null;
+var danyaoshu=6;//para mostrar cuantos bala tiene
+var k=1;//para saber los vector a que lado
+var vel=5;//velocita de submarino
+var tiempo=0;
+var TM=0;//para saber submarino poner bala o no .
+var nota=0;//como punto
+var nivel=1;//nivel
+var paused=false;//pausa o no pausa
+var llave=true;//estado en image Strar o no 
+var pasa=false;//estado en image que suber nivel o no 
+var derrota=false;//estado en image que derrota o no 
+var fin=false;// estado en image que The end de juego o no
+
+//nivel-3   los datos de nivel 3 
+var t1=null;//que box de nivel 3
+var t2=null;
+var t3=null;
+var t4=null;
+var t5=null;
+var atiempo=0;//para calcual la ancuro
+
+
+
+//Í¼Æ¬ los images
+var img_barco = new Image();
+var img_submarino = new Image();
+var img_bala_barco = new Image();
+var img_bala_submarino = new Image();
+var img_bing = new Image();
+var img_shanhu = new Image();
+var img_principal=new Image();
+var img_guoguan=new Image();
+var img_shibai=new Image();
+var img_end=new Image();
+var img_shubiao=new Image();
+var img_dianji=new Image();
+//±³¾°Í¼Æ¬
+var img_background = new Image();
+var img_background_ox = -2;
+var img_background_dx = DX;
+var img_background_oy = -2;
+var img_background_dy = DY;
+
+function Update() 
+{
+    _world.Update(elapsed_time);
+	
+	//Êó±ê¼ì²â
+	if(barco)//que movir barco por mouse
+	{
+		if(tiempo==0)
+		{
+			if(barco.position.x>mouse_x/10)
+			{
+				barco.position.x-=1;
+			}
+			if(barco.position.x<mouse_x/10)
+			{
+				barco.position.x+=1;
+			}
+			tiempo=0.05;//barco nesecita tiempo para movir
+			if(tiempo>0)
+			tiempo-=elapsed_time;
+			if(tiempo<0)
+			tiempo=0;
+		}
+		if(barco.position.x>=123)
+		barco.position.x=123;
+		
+		if(barco.position.x<=1)
+		barco.position.x=1;
+	}
+	
+	//Åö×²¼ì²â
+	for(var i=0;i<_world.m_bodyCount;++i)
+	{
+		var body = _world.bodies[i];
+		if (typeof  body.timer != "undefined"&&body.status==BALA_EXPLOTANDO) 
+		{
+			if(body.timer>0)
+			{
+				body.timer -= elapsed_time;
+				if(body.timer<0)
+				{
+					if(body.id==idbarco)
+					{
+						derrota=true;
+						body.timer = 0;
+						Restart();
+					}
+					if(body.id==idPY)
+					{
+						body.timer = 0;
+						barco.deleted=true;
+						Restart();
+					}
+					body.timer = 0;
+					body.deleted = true;
+				}
+			}
+		}
+	}
+	
+	for(var i=0;i<_world.m_contactCount;i++)
+	{
+		var Contact=_world.contacts[i];
+		if((Contact.A.id==idqiang&&Contact.B.id==idball)||(Contact.A.id==idqiang&&Contact.B.id==idballs)||(Contact.A.id==idzhangai&&Contact.B.id==idballs))
+		{
+			//Contact.B.img=img_baozha;
+			Contact.B.SetStatic();
+			Contact.B.status = BALA_EXPLOTANDO;
+			Contact.B.timer = total_explosion;
+		}
+		else if((Contact.A.id==idball&&Contact.B.id==idqiang)||(Contact.A.id==idballs&&Contact.B.id==idqiang)||(Contact.A.id==idballs&&Contact.B.id==idzhangai))
+		{
+			//Contact.A.img=img_baozha;
+			Contact.A.SetStatic();
+			Contact.A.status = BALA_EXPLOTANDO;
+			Contact.A.timer = total_explosion;
+		}
+		
+		else if((Contact.A.id==idball&&Contact.B.id==idball)||(Contact.A.id==idballs&&Contact.B.id==idballs)||(Contact.A.id==idballs&&Contact.B.id==idball)||(Contact.A.id==idball&&Contact.B.id==idballs))
+		{
+			//Contact.A.img=img_baozha;
+			//Contact.B.img=img_baozha;
+			Contact.A.SetStatic();
+			Contact.A.status = BALA_EXPLOTANDO;
+			Contact.A.timer = total_explosion;
+			Contact.B.SetStatic();
+			Contact.B.status = BALA_EXPLOTANDO;
+			Contact.B.timer = total_explosion;
+		}
+		
+		if((Contact.A.id==idPY&&Contact.B.id==idball) ||(Contact.A.id==idball&&Contact.B.id==idPY))
+		{
+			//Contact.A.img=img_baozha;
+			//Contact.B.img=img_baozha;
+			//barco.img=img_baozha;
+			//Contact.A.deleted=true;
+			//Contact.B.deleted=true;
+			Contact.A.SetStatic();
+			Contact.A.status = BALA_EXPLOTANDO;
+			Contact.A.timer = total_explosion;
+			Contact.B.SetStatic();
+			Contact.B.status = BALA_EXPLOTANDO;
+			Contact.B.timer = total_explosion;
+			nota++;
+			//Restart();
+		}	
+		
+		if((Contact.A.id==idbarco&&Contact.B.id==idballs) ||(Contact.A.id==idballs&&Contact.B.id==idbarco))
+		{
+			//Contact.A.img=img_baozha;
+			//Contact.B.img=img_baozha;
+			//barco.img=img_baozha;
+			//Contact.A.deleted=true;
+			//Contact.B.deleted=true;
+			Contact.A.SetStatic();
+			Contact.A.status = BALA_EXPLOTANDO;
+			Contact.A.timer = total_explosion;
+			Contact.B.SetStatic();
+			Contact.B.status = BALA_EXPLOTANDO;
+			Contact.B.timer = total_explosion;
+			nota++;
+			//Restart();
+		}	
+	}
+	
+	
+	//ÓÎÏ·Ñ­»· que funcionar por elapsed_time
+	if(elapsed_time)
+	{
+		vel=5+15*(nivel-1);
+		submarino.position.x=submarino.position.x+k*vel*(elapsed_time);
+		atiempo=atiempo+(elapsed_time);
+		TM+=elapsed_time;
+		if(TM>=2)
+		{
+			bala_submarino[bala_s].visible=true;
+			bala_submarino[bala_s].deleted=false;
+			bala_submarino[bala_s].position=new Vector2(submarino.position.x,submarino.position.y-5);
+			bala_submarino[bala_s].velocity = new Vector2(0,-90);
+			bala_submarino[bala_s].SetMass(20);
+			bala_submarino[bala_s].collider_list = [barco];
+			bala_s++;
+			TM=0;
+			if(bala_s ==7)
+			{
+				bala_s=0;
+			}
+		}
+		if(submarino.position.x>=126)
+		{
+			k=-1;
+		}
+		if(submarino.position.x<=0)
+		{
+			k=1;
+		}
+		
+		if(nivel==3)//que gerar los boxes de nivel 3
+		{
+			t1.SetOrient(-1+2.7*atiempo);
+			t2.SetOrient(-1-2.8*atiempo);
+			t3.SetOrient(-1+2.9*atiempo);
+			t4.SetOrient(-1-2.7*atiempo);
+			t5.SetOrient(-1+2.8*atiempo);
+		}
+	}
+	
+}
+//äÖÈ¾
+function Render() 
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		//±³¾°Í¼Æ¬
+		ctx.drawImage(img_background,ox+img_background_ox*ex,oy+img_background_oy*ex,ox+img_background_dx*ex,oy+img_background_dy*ex);
+		//dibujo que los Notas, nivel , bala , y como jugar.
+		ctx.fillStyle = 'rgba(255,100,,255)';
+		ctx.fillText("Nota :"+nota+" (Hasta 3,Next Nivel)",70,20);
+		ctx.fillStyle = 'rgba(150,50,0,255)';
+		ctx.fillText("Nivel :"+nivel,230,20);
+		ctx.fillStyle = 'rgba(255,0,0,255)';
+		ctx.fillText("Bala :"+danyaoshu+" (Hasta 0,Derrota)",280,20);
+		ctx.drawImage(img_shubiao,420,6,20,20);
+		ctx.fillStyle = 'rgba(0,150,50,255)';
+		ctx.fillText("Movir mouse para movir barco.",450,20);
+		ctx.drawImage(img_dianji,620,6,20,20);
+		ctx.fillStyle = 'rgba(0,150,50,255)';
+		ctx.fillText("Poner para poner bala.",650,20);
+		
+		//dibujo explosion 
+		for(var i=0;i<_world.m_bodyCount;++i)
+		{
+			var body = _world.bodies[i];
+			if (typeof  body.timer != "undefined"&&body.status==BALA_EXPLOTANDO) 
+			{
+				if(body.timer>0&&body.status==BALA_EXPLOTANDO)
+				{
+					var nro_imagen = ( 20 - body.timer / total_explosion * 19 ) | 0;
+					var fil = nro_imagen % 4;
+					var col = (nro_imagen / 4) | 0;
+					var dx = 1280 / 4;
+					var dy = 1200 / 5;
+					var explo_dr = 150;
+					
+					ctx.drawImage(img_explosion,fil*dx,col*dy , dx,dy ,
+						ox + (body.position.x-4*body.width/2)*ex, 
+						oy + (body.position.y-4*body.height/2)*ey,
+						4*body.width*ex,4*body.height*ey);
+				}
+			}
+		}
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx);
+    }
+	if(llave)//estado en image de start 
+	{	//dibujo el image de start
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		ctx.drawImage(img_principal,0,0,1280,560);
+	}
+	if(pasa)//estado en image de pasar
+	{//dibujo el image de pasar
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		ctx.drawImage(img_guoguan,0,0,1280,560);
+	}
+	if(derrota)//estado en image de derrota
+	{//dibujo el image de derrota
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		ctx.drawImage(img_shibai,0,0,1280,560);
+	}
+	if(fin)//estado en image de The end
+	{//dibujo el image de The end
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		ctx.drawImage(img_end,0,0,1280,560);
+	}
+}
+
+//Ñ­»·
+function RenderLoop() 
+{
+	if (!init)
+			return;
+	//ÔÝÍ£Ñ­»· que para pause
+	if(tiempo>0)
+	{
+		tiempo-=elapsed_time;
+	}
+	if(tiempo<=0)
+	{
+		tiempo=0;
+		paused=false;
+	}
+	if(paused)
+	{
+		return;
+	}
+
+	Render();
+	Update();
+}
+
+//¼üÎ»
+function doKeyDown(e) 
+{
+	if(e.keyCode==13)
+	{//Entre
+		if(llave)// salir de image empresa a start juego
+		{
+			llave=false;
+		}
+		if(derrota)// salir de image derrota a image END
+		{
+			derrota=false;
+			fin=true;
+		}
+		if(pasa)// salir de image pasa a juego de nivel nuevo
+		{
+			pasa=false;
+		}
+	}
+	
+	if(e.keyCode==65)
+	{//A
+		if(derrota)// salir de image derrota a Restart ese nivel
+		{
+			derrota=false;
+		}
+	}
+
+	if(e.keyCode==39)
+	{
+		// "derecha"
+		
+	}
+	if(e.keyCode==37)
+	{
+		// "izquierda"
+		
+	}
+	
+}
+//Êó±êÒÆ¶¯
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos-20;
+	mouse_y = yPos+1;
+
+	
+	
+}
+//Êó±êµã»÷
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1://ponga balas cuando no estado en image de empresa, pasa,derrota y END
+			if(!llave&&!pasa&&!derrota&&!fin)
+			{
+				bala_barco[bala_p].visible=true;
+				bala_barco[bala_p].deleted=false;
+				bala_barco[bala_p].position=new Vector2(barco.position.x,barco.position.y+5);
+				bala_barco[bala_p].velocity = new Vector2(0,50);
+				bala_barco[bala_p].SetMass(20);
+				bala_p++;
+				danyaoshu=6-bala_p;//para mostrar cuantos bala hay ahora.
+				if(bala_p ==7)
+				{
+					derrota=true;//aqui hay error pero no se como canbiar , porque el digo que sobre motor
+					Restart();
+				}
+			}
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+//Êó±êËÉ¿ª
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+//ÖØÐÂ¿ªÊ¼
+function Restart()
+{
+	if(derrota)
+	{
+		bala_p=0;
+		nota=0;
+		danyaoshu=6;
+	}
+
+	if(nota==3)
+	{
+		if(nivel<=3)
+		{//suber nivel y entrar image de pasa 
+			nivel++;
+			pasa=true;
+		}
+		if(nivel>3)
+		{//The end de juego
+			fin=true;
+		}
+		nota=0;
+		tiempo=2;
+		bala_p=0;
+		danyaoshu=6;
+		paused=true;
+	}
+	
+	loadscene();
+}
+
+//»ù´¡´´½¨
+function loadscene()
+{
+	//Image
+	img_barco.src="barco.png";
+	img_submarino.src="submarino.png";
+	img_bala_barco.src="bala_barco.png";
+	img_bala_submarino.src = "bala_submarino.png";
+	img_background.src="background1.png";
+	img_principal.src="principal.png";
+	img_explosion.src="explosion.png";
+	img_guoguan.src="guoguan.png";
+	img_end.src="end.png";
+	img_shibai.src="shibai.png";
+	img_bing.src="bing.png";
+	img_shanhu.src="shanhu.png";
+	img_shubiao.src="shubiao.png";
+	img_dianji.src="dianji.png";
+	//img_baozha.src="baozha.png";
+	//img_backgroundo.src="backgroundo.png";
+
+	_world.Clear();
+	// piso
+    var p = _world.AddBox(DX/2-1,DY,DX+2,1);
+	p.id=idqiang;
+    p.SetStatic();
+	
+	//top
+	var p = _world.AddBox(DX/2-1,-2,DX+2,1);
+	p.id=idqiang;
+	p.SetStatic();
+	
+	
+	//Ç½
+	var p = _world.AddBox(-2,DY/2-1,1,DY+2);
+	p.id=idqiang;
+	p.SetStatic();
+	var p = _world.AddBox(DX,DY/2-1,1,DY+2);
+	p.id=idqiang;
+	p.SetStatic();
+	
+	//´¬ barco
+	barco = _world.AddBox(DX/2,DY/2-22,5,2);
+	barco.color = "rgba(0,255,0,255)";
+	barco.id=idbarco;
+	barco.img = img_barco;
+	barco.SetStatic();
+	
+	//Ç±Ë®Í§  submarino
+	submarino = _world.AddBox(DX/2,DY-2,10,2);
+	submarino.color = "rgba(0,255,0,255)";
+	submarino.id=idPY;
+	submarino.img = img_submarino;
+	submarino.SetStatic();
+
+	/*±ù²ã
+	var bing = _world.AddBox(11,DY/2-10,26,1);
+	bing.img=img_bing;
+	bing.SetStatic();
+	var bing = _world.AddBox(45,DY/2-10,26,1);
+	bing.img=img_bing;
+	bing.SetStatic();
+	var bing = _world.AddBox(80,DY/2-10,26,1);
+	bing.img=img_bing;
+	bing.SetStatic();
+	var bing = _world.AddBox(116,DY/2-10,26,1);
+	bing.img=img_bing;
+	bing.SetStatic();
+	*/
+	
+	//Ë®ÏÂ·´µ¯Çø que nivel 1 y parte de nivel 2
+	if(nivel==1||nivel==2)
+	{
+		var p = _world.AddTri(-11,3,0,-3,11,3);
+		p.id=idzhangai;
+		p.img=img_shanhu;
+		p.position.Set(28, 20);
+		p.SetStatic();
+		var p = _world.AddTri(-11,3,0,-3,11,3);
+		p.id=idzhangai;
+		p.img=img_shanhu;
+		p.position.Set(62, 20);
+		p.SetStatic();
+		var p = _world.AddTri(-11,3,0,-3,11,3);
+		p.id=idzhangai;
+		p.img=img_shanhu;
+		p.position.Set(98, 20);
+		p.SetStatic();
+	}
+	if(nivel==2)// que parte de nivel 2
+	{
+		var p = _world.AddTri(-11,3,0,-3,11,3);
+		p.id=idzhangai;
+		p.img=img_shanhu;
+		p.position.Set(6, 30);
+		p.SetStatic();
+		var p = _world.AddTri(-11,3,0,-3,11,3);
+		p.id=idzhangai;
+		p.img=img_shanhu;
+		p.position.Set(45, 30);
+		p.SetStatic();
+		var p = _world.AddTri(-11,3,0,-3,11,3);
+		p.id=idzhangai;
+		p.img=img_shanhu;
+		p.position.Set(80, 30);
+		p.SetStatic();
+		var p = _world.AddTri(-11,3,0,-3,11,3);
+		p.id=idzhangai;
+		p.img=img_shanhu;
+		p.position.Set(117, 30);
+		p.SetStatic();
+	}
+	if (nivel==3)//que cosa hay en nivel 3
+	{
+		t1 = _world.AddBox(10,26,26,2);
+		t1.id=idzhangai;
+		t1.img=img_bing;
+		t1.SetOrient(-1);
+		t1.SetStatic();
+		t2 = _world.AddBox(36,26,26,2);
+		t2.id=idzhangai;
+		t2.img=img_bing;
+		t2.SetOrient(-1);
+		t2.SetStatic();
+		t3 = _world.AddBox(62,26,26,2);
+		t3.id=idzhangai;
+		t3.img=img_bing;
+		t3.SetOrient(-1);
+		t3.SetStatic();
+		t4 = _world.AddBox(88,26,26,2);
+		t4.id=idzhangai;
+		t4.img=img_bing;
+		t4.SetOrient(-1);
+		t4.SetStatic();
+		t5 = _world.AddBox(114,26,26,2);
+		t5.id=idzhangai;
+		t5.img=img_bing;
+		t5.SetOrient(-1);
+		t5.SetStatic();
+	}
+	
+	//Õ¨µ¯bala
+	for(var i=0;i<7;i++)
+	{
+		bala_barco[i] = _world.AddCircle(barco.position.x,barco.position.y+5,2);
+		bala_barco[i].img = img_bala_barco;
+		bala_barco[i].velocity = new Vector2(0,0);
+		bala_barco[i].id=idball;
+		bala_barco[i].timer = 0;
+		bala_barco[i].status = BALA_EN_EL_AIRE;
+		bala_barco[i].visible=false;
+	}
+	//bala submarino
+	for(var j=0;j<7;j++)
+	{
+		bala_submarino[j] = _world.AddCircle(submarino.position.x,submarino.position.y-5,2);
+		bala_submarino[j].img = img_bala_submarino;
+		bala_submarino[j].velocity = new Vector2(0,0);
+		bala_submarino[j].id=idballs;
+		bala_submarino[j].timer = 0;
+		bala_submarino[j].status = BALA_EN_EL_AIRE;
+		bala_submarino[j].visible=false;
+		bala_submarino[j].SetStatic();
+	}
+	 
+	 init = true;
+	 
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	loadscene();
+    setInterval(RenderLoop, elapsed_time * 1000);
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="1280" height="560"></canvas>
+</body>
+</html>
+ 

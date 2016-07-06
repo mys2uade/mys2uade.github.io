@@ -1,0 +1,202 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+
+var TextPuntaje = "Score: ";
+var Puntaje = 0;
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+var gravityScale = 5.0;
+var gravity = new Vector2( 0, 10 * gravityScale );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+
+var init = false;
+var caja;
+var shoot= false;
+var pC;
+function Update() 
+{
+    _world.Update(elapsed_time);
+	
+	if(shoot ==true ){
+		caja.deleted = true;
+		shoot = false;
+	}
+}
+
+function Render() 
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx,ox,oy,ex,ey);
+		
+		
+		ctx.fillStyle = 'rgb(255,0,0)';
+		ctx.beginPath();
+		ctx.arc(720, 420, 30, 0, 2 * Math.PI, false);
+		ctx.closePath();
+		ctx.fill();
+		
+		ctx.fillStyle = 'rgba(255,0,0,255)';
+		ctx.font ="25px arial";
+		ctx.fillText(TextPuntaje + Puntaje, 200, 100);
+    }
+}
+
+
+function RenderLoop() 
+{
+    if (!init)
+		return;
+    
+	Update();
+	Render();
+}
+
+
+function doKeyUp(e) 
+{   
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+}
+
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+	if(e.keyCode==32)
+	{
+		shoot =true;
+		
+	}
+
+
+	
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function loadscene()
+{
+
+	caja = _world.AddBox(50,0,2,2);
+	caja.SetStatic();
+	
+	var p = _world.AddCircle(55,15,3);
+		
+	p.restitution = 1;
+	p.velocity.Set(20 , 0);
+	pC = _world.AddJointConstraint(caja,p);
+	
+	// Creo un piso
+    p = _world.AddBox(70, 40, 20, 20);
+    p.SetStatic();
+	p.collider_list = [p];
+	//aro
+	
+    p = _world.AddBox(65.5, 40, 2, 2);
+    p.SetStatic();
+
+	p = _world.AddBox(74.5, 40, 2, 2);
+    p.SetStatic();
+	
+	p = _world.AddCircle(69,0,3);
+	
+	// Creo un circulo
+
+	
+    init = true;
+
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	
+	loadscene();
+	
+    setInterval(RenderLoop, elapsed_time * 1000);
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="1000" height="700"></canvas>
+</body>
+</html>
+ 

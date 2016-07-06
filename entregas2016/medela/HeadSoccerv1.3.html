@@ -1,0 +1,1154 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/20;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+// pos y tamaño de pantalla
+var OX = 50;
+var OY = 50;
+var DX = 1000 - (OX * 2);
+var DY = 700 - (OY * 2);
+
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+var gravity = new Vector2( 0, 0 );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+var _body = new Body();
+var init = false;
+var Status = 0;
+var Pelota;
+var pCirculoJugador1;
+var pCirculoJugador2;
+var pBotinJugador1;
+var pBotinJugador2;
+
+//Variables de Inicio
+var ImgInicio = new Image();
+var TextPvP = "Jugador vs Jugador";
+var posTextPvP = {x:340, y: DY - 180};
+var TextInstrucciones = "Instrucciones";
+var posTextInstrucciones = {x: posTextPvP.x + 25, y: posTextPvP.y + 40};
+
+//Variables de Jugadores
+var ImgCancha = new Image();
+var posRect = {x: 45, y: 40};
+var AnchoRect = (DX - OX) - 85;  
+var AltoRect = (DY - OY) - 85;
+var ImgJugador1 = new Image();
+var SpriteJugador1 = {p1: 67 * 19,p2: 0};
+var ImgJugador2 = new Image();
+var SpriteJugador2 = {p1: 0 ,p2: 0};
+var ImgEscudos = new Image();
+var SpriteEscudoJugador1 = {p1: 0,p2: 0};
+var SpriteEscudoJugador2 = {p1: 0,p2: 0};
+var AnchoEscudo = 67;
+var AltoEscudo = 76;
+var posEscudo = {x: AnchoRect / 4 - AnchoEscudo / 2,y: 100};
+var posImgJugador1 = {x: AnchoRect / 4 - AnchoEscudo / 2,y: posEscudo.y + AltoEscudo};
+var posImgJugador2 = {x: posImgJugador1.x,y: posImgJugador1.y};
+var TextoSeleccionEquipos = "Seleccion de Equipos";
+var posTextoSeleccionEquipos = {x: AnchoRect / 2 - 50, y: 80};
+var VectorTextoEquipos = ["Arsenal","Aston Villa","Cardiff","Chelsea",
+						  "Crystal Palace","Everton","Fulham","Hullcity",
+						  "Liverpool","Man City","Man United","NewCastle",
+						  "Norwich","Southamptom","Stoke City","Sunderland",
+						  "Swansea","Tottenham","WestBrom","WestHam"];
+
+var posVectorTextEquipos = {x: posImgJugador1.x, y: AltoRect / 2 + AltoEscudo / 2};
+var Indice1 = 0;
+var Indice2 = 0;
+var ImgBotinJugador1 = new Image();
+var posImgBotinJugador1 = {x: posImgJugador1.x + 15, y:posImgJugador1.y + AltoEscudo - 17};
+var ImgBotinJugador2 = new Image();
+var posImgBotinJugador2 = {x:posImgBotinJugador1.x, y:posImgBotinJugador1.y};
+
+//Variables de Dificultad
+var ImgDificultad = new Image();
+var posImgDificultad = {x: AnchoRect / 2 - 55, y: posVectorTextEquipos.y + 80};
+var SpriteImgDificultad = {p1: 0, p2: 0};
+var AnchoImgDificultad = 196;
+var AltoImgDificultad = 132; 
+var TextoSeleccionEquipos = "Seleccion de Dificultad";
+var posTextoSeleccionDificultad = {x: AnchoRect / 2 - 60,y: posVectorTextEquipos.y + 50};
+var ImgFlechaIzquierda = new Image();
+var posImgFlechaIzquierda = {x: 275,y: 385};
+var ImgFlechaDerecha = new Image();
+var posImgFlechaDerecha = {x: posImgFlechaIzquierda.x + AnchoImgDificultad + 57,y: posImgFlechaIzquierda.y};
+
+//Variables de Juego
+var ImgCanchaJuego = new Image();
+var ImgResTiemp = new Image();
+var AnchoImgResTiemp = 420;
+var AltoImgResTiemp = 76;
+var posImgResTiemp = {x: DX / 2 - AnchoImgResTiemp / 2, y: 424 + AltoImgResTiemp};
+var PuntajeJugador1 = 0;
+var posPuntajeJugador1 = {x: 381,y: DY - 75};
+var PuntajeJugador2 = 0;
+var TimerTiempoJuego = 0;
+var posTiempoJuego = {x: posPuntajeJugador1.x + 1, y: posPuntajeJugador1.y + 25};
+var FlagTiempo = false;
+var Minutos = {p1: 0, p2: 1};
+var Segundos = {p1: 0, p2: 0};
+var paused = false;
+var ImgArco1 = new Image();
+var ImgArco2 = new Image();
+var ImgPelota = new Image();
+var EstadoJ1 = 0;
+var EstadoJ2 = 0;
+var FuerzapBotinJugador1= new Vector2();
+var FuerzapCirculoJugador1 = new Vector2();
+var FuerzapBotinJugador2= new Vector2();
+var FuerzapCirculoJugador2 = new Vector2();
+var FuerzaPelota = new Vector2();
+var CentroDeMasapBotinJugador1 = new Vector2();
+var CentroDeMasapCirculoJugador1 = new Vector2();
+var CentroDeMasapBotinJugador2 = new Vector2();
+var CentroDeMasapCirculoJugador2 = new Vector2();
+var CentroDeMasaPelota = new Vector2();
+var idPiso = 700;
+var idBotinJ1 = 900;
+var idBotinJ2 = 901;
+var idPelota = 905;
+var idArco1 = 902;
+var idArco2 = 903;
+var FlagGolJ1 = false;
+var FlagGolJ2 = false;
+var FlagTimer = true;
+var Timer = true;
+var TiempoDeEspera = 3;
+
+
+
+//Variables de Instrucciones
+var posInstrucciones = {x: 366,y: 65};
+var Texto1 = "Eleccion de Equipos:";
+var posTexto1 ={x: 50, y: posInstrucciones.y + 45};
+var Texto2 = "El jugador1 selecciona su equipo presionando las teclas A y S.";
+var posTexto2 ={x:posTexto1.x, y: posTexto1.y + 18};
+var Texto3 = "El jugador2 selecciona su equipo presionando las teclas J y L.";
+var posTexto3 ={x:posTexto2.x, y: posTexto2.y + 16};
+var Texto4 = "Eleccion de Dificultad:";
+var posTexto4 ={x:posTexto3.x, y: posTexto3.y + 30};
+var Texto5 = "Se selecciona la dificultad haciendo click con el mouse el las flechas correspondientes.";
+var posTexto5 ={x:posTexto4.x, y: posTexto4.y + 18};
+var Texto6 = "Condiciones del Juego: ";
+var posTexto6 ={x:posTexto5.x, y: posTexto5.y + 30};
+var Texto7 = "Jugador1:";
+var posTexto7 ={x:posTexto6.x, y: posTexto6.y + 18};
+var Texto8 = "Salta presionando la letra W.";
+var posTexto8 ={x:posTexto7.x, y: posTexto7.y + 18};
+var Texto9 = "Se desplaza hacia la izquierda presionando la letra A.";
+var posTexto9 ={x:posTexto8.x, y: posTexto8.y + 18};
+var Texto10 = "Se desplaza hacia la derecha presionando la letra S.";
+var posTexto10 ={x:posTexto9.x, y: posTexto9.y + 18};
+var Texto11 = "Jugador2:";
+var posTexto11 ={x:posTexto10.x, y: posTexto10.y + 18};
+var Texto12= "Salta presionando la letra I.";
+var posTexto12 ={x:posTexto11.x, y: posTexto11.y + 18};
+var Texto13 ="Se desplaza hacia la izquierda presionando la letra J.";
+var posTexto13 ={x:posTexto12.x, y: posTexto12.y + 18};
+var Texto14 ="Se desplaza hacia la derecha presionando la letra L.";
+var posTexto14 ={x:posTexto13.x, y: posTexto13.y + 18};
+var Texto15 ="El partido dura 1 minuto.";
+var posTexto15 ={x:posTexto14.x, y: posTexto14.y + 30};
+
+//Variables de Fin del Partido
+var TextoFinPartido =" ";
+var posTextoFinPartido = {x: AnchoRect / 2 - 20, y: 100};
+
+
+//variables Marcos
+var ImgMarco = new Image();
+var posMarco = {x:312, y: DY - 205};
+
+//Keys
+//Jugador2
+var a = false;
+var d = false;
+var w = false;
+var BarraEspaciadora = false;
+
+//Jugador1
+var J = false;
+var L = false;
+var I = false;
+var Enter = false;
+
+function UpDateJuego()
+{
+	if(FlagTiempo == false)
+	{
+		Minutos.p2 = 0;
+		Segundos.p1 = 5;
+		Segundos.p2 = 9;
+		FlagTiempo = true;
+	}else
+	    {
+	    	TimerTiempoJuego += elapsed_time;
+		
+		
+			if(TimerTiempoJuego >= 1)
+			{
+				TimerTiempoJuego = 0;
+				Segundos.p2--;
+			} 
+		
+		
+			if(Segundos.p1 != 0 &&Segundos.p2 == 0)
+			{
+				Segundos.p2 = 9;
+				Segundos.p1--;	
+			}
+			
+			if(Segundos.p1 == 0 && Segundos.p2 == 0) Status = 4;
+			
+			if(FlagTimer == true)
+			{
+				Timer += elapsed_time;
+				
+				if(Timer >= 1 && Timer < 2) TiempoDeEspera = 3;
+				if(Timer >= 2 && Timer < 3) TiempoDeEspera = 2;
+				if(Timer >= 3 && Timer <4) TiempoDeEspera = 1;
+				
+				if(Timer >= 4)
+				{
+					pelota.visible = true;
+					FlagTimer = false;
+					Timer = 0;
+					
+					FuerzaPelota.x = 20;
+					FuerzaPelota.y = -50;
+					
+					pelota.ApplyForce(FuerzaPelota);
+					pelota.ApplyImpulse(FuerzaPelota, CentroDeMasaPelota);
+				}
+			}
+		
+		
+	 }
+}
+
+function Inicio()
+{
+	ctx.drawImage(ImgInicio, OX, OY,DX - OX,DY - OY);
+	
+	
+	//Dibujo el TextPvP
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.drawImage(ImgMarco, OX + posMarco.x, OY + posMarco.y);
+	ctx.fillText(TextPvP, OX + posTextPvP.x, OY + posTextPvP.y);
+	
+	//Dibujo el TextInstrucciones
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.drawImage(ImgMarco, OX + posMarco.x, OY + posMarco.y + 40);
+	ctx.fillText(TextInstrucciones, OX + posTextInstrucciones.x, OY + posTextInstrucciones.y);
+
+	
+}
+
+function ElejirJugadoresYDificultad()
+{
+	ctx.drawImage(ImgCancha, OX, OY,DX - OX,DY - OY);
+	
+	//Dibujo el rectangulo
+	ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(OX + posRect.x,OY + posRect.y,AnchoRect,AltoRect);
+	
+	//Dibujo el Texto Seleccion de Equipos
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(TextoSeleccionEquipos,  OX + posTextoSeleccionEquipos.x , OY + posTextoSeleccionEquipos.y);
+	
+	//Jugador1
+	ctx.drawImage(ImgEscudos, SpriteEscudoJugador1.p1, SpriteEscudoJugador1.p2, AnchoEscudo, AltoEscudo,OX + posEscudo.x, OY + posEscudo.y, AnchoEscudo, AltoEscudo);
+	ctx.drawImage(ImgJugador1,SpriteJugador1.p1,SpriteJugador1.p2,AnchoEscudo,AltoEscudo,OX + posImgJugador1.x,OY + posImgJugador1.y,AnchoEscudo,AltoEscudo);
+	ctx.drawImage(ImgBotinJugador1, OX + posImgBotinJugador1.x, OY + posImgBotinJugador1.y);
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(VectorTextoEquipos[Indice1], OX + posVectorTextEquipos.x , OY + posVectorTextEquipos.y + 10);
+	
+	
+	//Jugador2
+	ctx.drawImage(ImgEscudos, SpriteEscudoJugador2.p1, SpriteEscudoJugador2.p2, AnchoEscudo, AltoEscudo,OX + posEscudo.x * 4, OY + posEscudo.y, AnchoEscudo, AltoEscudo);
+    ctx.drawImage(ImgJugador2,SpriteJugador2.p1,SpriteJugador2.p2,AnchoEscudo,AltoEscudo,OX + posImgJugador2.x * 4,OY + posImgJugador2.y,AnchoEscudo,AltoEscudo);
+	ctx.drawImage(ImgBotinJugador2, OX + posImgBotinJugador2.x * 4 - 30, OY + posImgBotinJugador2.y);
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(VectorTextoEquipos[Indice2],  OX + posVectorTextEquipos.x * 4 , OY + posVectorTextEquipos.y + 10);
+	
+	//VectorDificultad
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(TextoSeleccionEquipos, OX + posTextoSeleccionDificultad.x , OY + posTextoSeleccionDificultad.y);
+	ctx.drawImage(ImgDificultad, SpriteImgDificultad.p1, SpriteImgDificultad.p2, AnchoImgDificultad, AltoImgDificultad, OX + posImgDificultad.x, OY + posImgDificultad.y, AnchoImgDificultad, AltoImgDificultad);
+	ctx.drawImage(ImgFlechaIzquierda, OX + posImgFlechaIzquierda.x, OY + posImgFlechaIzquierda.y);
+	ctx.drawImage(ImgFlechaDerecha, OX + posImgFlechaDerecha.x, OY + posImgFlechaDerecha.y);
+	
+	//Dibujo el Teto Atras
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.drawImage(ImgMarco, OX  + 45 - 100/ 4, OY + posMarco.y + 115, 100, 40);
+	ctx.fillText("Atras",OX + 45 , DY - 15);
+
+	//Dibujo el Texto Jugar
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.drawImage(ImgMarco, OX  + 725, OY + posMarco.y + 115, 100, 40);
+	ctx.fillText("Jugar",OX + 750 , DY - 15);
+} 
+
+function Instrucciones()
+{
+	//
+	ctx.drawImage(ImgCancha, OX, OY,DX - OX,DY - OY);
+
+	//Dibujo el rectangulo
+	ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(OX + posRect.x,OY + posRect.y,AnchoRect,AltoRect);
+	
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText("Instrucciones",OX + posInstrucciones.x, OY + posInstrucciones.y);
+	//Escribo las Instrucciones
+	ctx.fillStyle = 'rgba(0,0,0,255)';
+	ctx.font = "18px Arial";
+	ctx.fillText(Texto1,OX + posTexto1.x, OY + posTexto1.y);
+	ctx.fillText(Texto4,OX + posTexto4.x, OY + posTexto4.y);
+	ctx.fillText(Texto6,OX + posTexto6.x, OY + posTexto6.y);
+	
+	
+	ctx.fillStyle = 'rgba(0,0,0,255)';
+	ctx.font = "16px Arial";
+	ctx.fillText(Texto2,OX + posTexto2.x, OY + posTexto2.y);
+	ctx.fillText(Texto3,OX + posTexto3.x, OY + posTexto3.y);
+	ctx.fillText(Texto5,OX + posTexto5.x, OY + posTexto5.y);
+	ctx.fillText(Texto7,OX + posTexto7.x, OY + posTexto7.y);
+	ctx.fillText(Texto8,OX + posTexto8.x, OY + posTexto8.y);
+	ctx.fillText(Texto9,OX + posTexto9.x, OY + posTexto9.y);
+	ctx.fillText(Texto10,OX + posTexto10.x, OY + posTexto10.y);
+	ctx.fillText(Texto11,OX + posTexto11.x, OY + posTexto11.y);
+	ctx.fillText(Texto12,OX + posTexto12.x, OY + posTexto12.y);
+	ctx.fillText(Texto13,OX + posTexto13.x, OY + posTexto13.y);
+	ctx.fillText(Texto14,OX + posTexto14.x, OY + posTexto14.y);
+	ctx.fillText(Texto15,OX + posTexto15.x, OY + posTexto15.y);
+	
+	//Dibujo el Teto Atras
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.drawImage(ImgMarco, OX  + 45 - 100/ 4, OY + posMarco.y + 115, 100, 40);
+	ctx.fillText("Atras",OX + 45 , DY - 15);
+
+}
+
+function Jugar()
+{
+	ctx.drawImage(ImgCanchaJuego, OX, OY,DX - OX,DY - OY);
+	
+	ctx.drawImage(ImgResTiemp,posImgResTiemp.x, OY + posImgResTiemp.y);
+	
+	//Dibujo los escudos
+	ctx.drawImage(ImgEscudos, SpriteEscudoJugador1.p1, SpriteEscudoJugador1.p2, AnchoEscudo, AltoEscudo,OX + posEscudo.x - 150, OY + posEscudo.y - 85, AnchoEscudo, AltoEscudo);
+	ctx.drawImage(ImgEscudos, SpriteEscudoJugador2.p1, SpriteEscudoJugador2.p2, AnchoEscudo, AltoEscudo, OX + posEscudo.x  * 5 - 10, OY + posEscudo.y - 85, AnchoEscudo, AltoEscudo);
+	
+	ctx.drawImage(ImgJugador1,SpriteJugador1.p1,SpriteJugador1.p2,AnchoEscudo,AltoEscudo, pCirculoJugador1.position.x * ex - 20, pCirculoJugador1.position.y * ey - 28 + 10 ,AnchoEscudo,AltoEscudo);
+	ctx.drawImage(ImgJugador2,SpriteJugador2.p1,SpriteJugador2.p2,AnchoEscudo,AltoEscudo, pCirculoJugador2.position.x * ex - 28 + 15, pCirculoJugador2.position.y * ey - 28 + 10,AnchoEscudo,AltoEscudo);
+	ctx.drawImage(ImgArco1,OX + 1,DY - OY - 161);
+	ctx.drawImage(ImgArco2,DX - OX,DY - OY - 160);
+	
+	//Dibujo el texto de los dos equipos
+	ctx.fillStyle = 'rgba(0,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(VectorTextoEquipos[Indice1], OX + posVectorTextEquipos.x + 100 , OY + posVectorTextEquipos.y + 250);
+	ctx.fillText(VectorTextoEquipos[Indice2],  OX + (posVectorTextEquipos.x - 35) * 4 , OY + posVectorTextEquipos.y + 250);
+	
+	//Dibujo el tiempo de espera
+	if(FlagTimer == true)
+	{
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+		ctx.font = "30px Arial";
+		ctx.fillText(TiempoDeEspera, OX + 415 , OY + 300);
+	}
+	//Dibujo los puntajes
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "25px Arial";
+	ctx.fillText(PuntajeJugador1 + " " + "-" + " " + PuntajeJugador2, OX + posPuntajeJugador1.x , OY + posPuntajeJugador1.y);
+	
+	//Dibujo el tiempo de juego
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "18px Arial";
+	ctx.fillText(Minutos.p1 +""+ Minutos.p2 + ":" + Segundos.p1 +""+ Segundos.p2,OX + posTiempoJuego.x,OY + posTiempoJuego.y);
+	
+}
+
+function FinDelJuego()
+{
+	ctx.drawImage(ImgCanchaJuego, OX, OY,DX - OX,DY - OY);	
+
+	//Dibujo el rectangulo
+	ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    	ctx.fillRect(OX + posRect.x,OY + posRect.y,AnchoRect,AltoRect);
+	
+	//Dibujo el texto Fin del Partido
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText("Fin del Partido", OX + posTextoFinPartido.x, OY + posTextoFinPartido.y);
+	
+	//Dibujo los Escudos
+	ctx.drawImage(ImgEscudos, SpriteEscudoJugador1.p1, SpriteEscudoJugador1.p2, AnchoEscudo, AltoEscudo,OX + AnchoRect / 2 - 100, OY + posEscudo.y + 20, AnchoEscudo, AltoEscudo);
+	ctx.drawImage(ImgEscudos, SpriteEscudoJugador2.p1, SpriteEscudoJugador2.p2, AnchoEscudo, AltoEscudo, OX + AnchoRect / 2 + 100, OY + posEscudo.y + 20, AnchoEscudo, AltoEscudo);
+	
+	//Dibujo la puntuacion 
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "25px Arial";
+	ctx.fillText(PuntajeJugador1 + " " + "-" + " " + PuntajeJugador2, OX + posPuntajeJugador1.x + 10 , OY + posPuntajeJugador1.y - 360);
+	
+	//DIbujo el texto de los equipos
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(VectorTextoEquipos[Indice1], OX + AnchoRect / 2 - 100, OY  + 220);
+	ctx.fillText(VectorTextoEquipos[Indice2],  OX  + (AnchoRect / 2) + 100, OY + 220);
+	
+	//Dibujo el texto ReiniciarPartido
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.drawImage(ImgMarco, OX + posMarco.x - 20, OY + posMarco.y - 100);
+	ctx.fillText("Reiniciar Partido", OX + posTextPvP.x, OY + posTextPvP.y - 100);
+
+	//Dubujo el texto SeleccionarEquipos
+	ctx.fillStyle = 'rgba(255,255,255,255)';
+	ctx.font = "20px Arial";
+	ctx.drawImage(ImgMarco, OX + posMarco.x - 20, OY + posMarco.y - 60);
+	ctx.fillText("Seleccionar Equipos", OX + posTextPvP.x - 15, OY + posTextInstrucciones.y - 100);
+}
+
+function ClickLeftButon()
+{
+	switch(Status)
+	{
+		case 0:
+		{
+			if((mouse_x >= OX + posMarco.x && mouse_x <= OX + posMarco.x + 237)&& (mouse_y >= OY + posMarco.y && mouse_y <= OY + posMarco.y + 40))
+			{Status = 1;}
+			if((mouse_x >= (OX + posMarco.x) && mouse_x <= (OX + posMarco.x) + 237)&&(mouse_y >= OY + posMarco.y + 40 && mouse_y <= OY + posMarco.y + 80))
+			{Status = 2;}
+				break;
+		}
+		case 1: 
+		{    if((mouse_x >= OX  + 45 - 100/ 4 && mouse_x <= OX  + 45 - 100/ 4 + 100)&&(mouse_y >= OY + posMarco.y + 115 && mouse_y <= OY + posMarco.y + 155))
+				{Status = 0;}
+		     if((mouse_x >= OX  + 725 && mouse_x <= OX  + 825)&&(mouse_y >= OY + posMarco.y + 115 && mouse_y <= OY + posMarco.y + 155))	
+				{Status = 3;}		
+		     if((mouse_x >= OX + posImgFlechaDerecha.x && mouse_x <= OX + posImgFlechaDerecha.x + 50)&&(mouse_y >= OY + posImgFlechaDerecha.y && mouse_y <= OY + posImgFlechaDerecha.y + 65))
+			 {
+					SpriteImgDificultad.p1 += AnchoImgDificultad;
+					if(SpriteImgDificultad.p1 >= 3332) SpriteImgDificultad.p1 = 0;
+			 }
+		   	 if((mouse_x >= OX + posImgFlechaIzquierda.x && mouse_x <= OX + posImgFlechaIzquierda.x + 50)&&(mouse_y >= OY + posImgFlechaIzquierda.y && mouse_y <= OY + posImgFlechaIzquierda.y + 65))
+			{
+				if(SpriteImgDificultad.p1 == 0) SpriteImgDificultad.p1 = 3332;
+				SpriteImgDificultad.p1 -= AnchoImgDificultad;
+			}			 
+			break;
+		}
+		case 2: 
+		{
+			if((mouse_x >= OX  + 45 - 100/ 4 && mouse_x <= OX  + 45 - 100/ 4 + 100)&&(mouse_y >= OY + posMarco.y + 115 && mouse_y <= OY + posMarco.y + 155))
+				{Status = 0;} 
+			break;
+		}
+		case 4:
+		{
+			if((mouse_x >= OX + posMarco.x - 20 && mouse_x <= OX + posMarco.x + 215) && (mouse_y >= OY + posMarco.y - 100 && mouse_y <=OY + posMarco.y - 61))
+			{	Status = 3;
+				Minutos.p2 = 1;
+				Segundos.p1 = 0;
+				Segundos.p2 = 0;
+				FlagTiempo = false; 
+				PuntajeJugador1 = 0;
+				puntajeJUgador2 = 0;
+			}
+			
+			if((mouse_x >= OX + posMarco.x - 20 && mouse_x <=OX + posMarco.x + 215)&&(mouse_y >=  OY + posMarco.y - 60 && mouse_y <=  OY + posMarco.y - 21 ))
+			{
+				Status = 1;
+				Minutos.p2 = 1;	
+				Segundos.p1 = 0;
+				Segundos.p2 = 0;
+				FlagTiempo = false;		
+				PuntajeJugador1 = 0;
+				puntajeJUgador2 = 0;
+				
+			}
+			break;	
+		}
+		
+	}
+}
+
+function Update()      
+{
+    _world.Update(elapsed_time);
+
+   
+   if(Status == 3) 
+   {
+		UpDateJuego();		
+   
+		//Codifico la Posicion de la pelota
+		if(FlagTimer == false)
+		{
+			FuerzaPelota.x = 0;
+			FuerzaPelota.y = 10;
+			
+			pelota.ApplyForce(FuerzaPelota);
+		}
+		//Codifico el movimiento de Jugador1
+		if(EstadoJ1 == 1)
+		{
+			FuerzapBotinJugador1.y = +55;
+			FuerzapBotinJugador1.x = 0;
+			FuerzapCirculoJugador1.y = (FuerzapBotinJugador1.y * pCirculoJugador1.mass) / pBotinJugador1.mass;
+			FuerzapCirculoJugador1.x = 0;
+			pCirculoJugador1.ApplyForce(FuerzapCirculoJugador1);
+		
+			pBotinJugador1.position.y = pCirculoJugador1.position.y + 4.5;
+			pBotinJugador1.position.x = pCirculoJugador1.position.x - 0.7;
+		}
+		if(EstadoJ1 == 2)
+		{
+			FuerzapBotinJugador1.x = 0;
+			FuerzapBotinJugador1.y = +5;
+		
+			FuerzapCirculoJugador1.y = (FuerzapBotinJugador1.y * pCirculoJugador1.mass) / pBotinJugador1.mass;
+			FuerzapCirculoJugador1.x = (FuerzapBotinJugador1.x * pCirculoJugador1.mass) / pBotinJugador1.mass;
+		
+				
+			pCirculoJugador1.ApplyForce(FuerzapCirculoJugador1);
+			pCirculoJugador1.ApplyImpulse(FuerzapCirculoJugador1,CentroDeMasapCirculoJugador1);
+		
+			pBotinJugador1.position.y = pCirculoJugador1.position.y + 4.5;
+			pBotinJugador1.position.x = pCirculoJugador1.position.x - 0.7;
+		}
+	
+		if (EstadoJ1 == 3)
+		{
+			FuerzapBotinJugador1.x = 0;
+			FuerzapBotinJugador1.y = +5;
+			FuerzapCirculoJugador1.y = (FuerzapBotinJugador1.y * pCirculoJugador1.mass) / pBotinJugador1.mass;
+			FuerzapCirculoJugador1.x = (FuerzapBotinJugador1.x * pCirculoJugador1.mass) / pBotinJugador1.mass;
+		
+			pCirculoJugador1.ApplyForce(FuerzapCirculoJugador1);
+			pCirculoJugador1.ApplyImpulse(FuerzapCirculoJugador1,CentroDeMasapCirculoJugador1);
+				
+			pBotinJugador1.position.y = pCirculoJugador1.position.y + 4.5;
+			pBotinJugador1.position.x = pCirculoJugador1.position.x - 0.7;
+		}
+		if(w == true && a == true && EstadoJ1 == 0)
+		{
+			FuerzapBotinJugador1.x = -50;
+			FuerzapBotinJugador1.y = -100;
+			EstadoJ1 = 3;
+		
+			FuerzapCirculoJugador1.y = (FuerzapBotinJugador1.y * pCirculoJugador1.mass) / pBotinJugador1.mass;
+			FuerzapCirculoJugador1.x = (FuerzapBotinJugador1.x * pCirculoJugador1.mass) / pBotinJugador1.mass;
+				
+			pCirculoJugador1.ApplyForce(FuerzapCirculoJugador1);
+			pCirculoJugador1.ApplyImpulse(FuerzapCirculoJugador1,CentroDeMasapCirculoJugador1);
+		}
+		if(w == true && d == true && EstadoJ1 == 0)
+		{
+			FuerzapBotinJugador1.x = 50;
+			FuerzapBotinJugador1.y = -100;
+			EstadoJ1 = 2;
+		
+			FuerzapCirculoJugador1.y = (FuerzapBotinJugador1.y * pCirculoJugador1.mass) / pBotinJugador1.mass;
+			FuerzapCirculoJugador1.x = (FuerzapBotinJugador1.x * pCirculoJugador1.mass) / pBotinJugador1.mass;
+		
+		
+			pCirculoJugador1.ApplyForce(FuerzapCirculoJugador1);
+			pCirculoJugador1.ApplyImpulse(FuerzapCirculoJugador1,CentroDeMasapCirculoJugador1);
+		}	
+	
+		if(w == true && EstadoJ1 == 0)
+		{
+			FuerzapBotinJugador1.x = 0;
+			FuerzapBotinJugador1.y = -55;
+			EstadoJ1 = 1;
+			FuerzapCirculoJugador1.y = (FuerzapBotinJugador1.y * pCirculoJugador1.mass) / pBotinJugador1.mass;
+			FuerzapCirculoJugador1.x = 0;
+		
+			pCirculoJugador1.ApplyForce(FuerzapCirculoJugador1);
+			pCirculoJugador1.ApplyImpulse(FuerzapCirculoJugador1,CentroDeMasapCirculoJugador1);
+		}
+	
+		if(EstadoJ1 == 5 || EstadoJ1 == 4)
+		{
+			pCirculoJugador1.velocity.x = 0;
+			pCirculoJugador1.velocity.y = 0;
+		
+			pBotinJugador1.position.x = pCirculoJugador1.position.x - 0.5;
+		
+			EstadoJ1 = 0;
+		}
+		if(a == true && EstadoJ1 == 0)
+		{
+			FuerzapBotinJugador1.x = -40;
+			FuerzapBotinJugador1.y = 0;
+			EstadoJ1 = 5;
+		
+			FuerzapCirculoJugador1.y = 0;
+			FuerzapCirculoJugador1.x = (FuerzapBotinJugador1.x * pCirculoJugador1.mass) / pBotinJugador1.mass;
+				
+			pCirculoJugador1.ApplyForce(FuerzapCirculoJugador1);
+			pCirculoJugador1.ApplyImpulse(FuerzapCirculoJugador1,CentroDeMasapCirculoJugador1);
+		}
+	
+		if(d == true && EstadoJ1 == 0)
+		{
+			FuerzapBotinJugador1.x = +40;
+			FuerzapBotinJugador1.y = 0;
+			EstadoJ1 = 4;
+		
+			FuerzapCirculoJugador1.y = 0;
+			FuerzapCirculoJugador1.x = (FuerzapBotinJugador1.x * pCirculoJugador1.mass) / pBotinJugador1.mass;
+		
+		
+			pCirculoJugador1.ApplyForce(FuerzapCirculoJugador1);
+			pCirculoJugador1.ApplyImpulse(FuerzapCirculoJugador1,CentroDeMasapCirculoJugador1);
+		}
+
+		//Codifico el Movimineto de Jugador2
+		if(EstadoJ2 == 1)
+		{
+			FuerzapBotinJugador2.y = +55;
+			FuerzapBotinJugador2.x = 0;
+			FuerzapCirculoJugador2.y = (FuerzapBotinJugador2.y * pCirculoJugador2.mass) / pBotinJugador2.mass;
+			FuerzapCirculoJugador2.x = 0;
+			pCirculoJugador2.ApplyForce(FuerzapCirculoJugador2);
+		
+			pBotinJugador2.position.y = pCirculoJugador2.position.y + 4.5;
+		
+		}
+	
+		if(EstadoJ2 == 2)
+		{
+			FuerzapBotinJugador2.x = 0;
+			FuerzapBotinJugador2.y = +5;
+		
+			FuerzapCirculoJugador2.y = (FuerzapBotinJugador2.y * pCirculoJugador2.mass) / pBotinJugador2.mass;
+			FuerzapCirculoJugador2.x = (FuerzapBotinJugador2.x * pCirculoJugador2.mass) / pBotinJugador2.mass;
+		
+				
+			pCirculoJugador2.ApplyForce(FuerzapCirculoJugador2);
+			pCirculoJugador2.ApplyImpulse(FuerzapCirculoJugador2,CentroDeMasapCirculoJugador2);
+		
+			pBotinJugador2.position.y = pCirculoJugador2.position.y + 4.5;
+			pBotinJugador2.position.x = pCirculoJugador2.position.x + 0.7;
+		}
+	
+		if (EstadoJ2 == 3)
+		{
+			FuerzapBotinJugador2.x = 0;
+			FuerzapBotinJugador2.y = +5;
+			FuerzapCirculoJugador2.y = (FuerzapBotinJugador2.y * pCirculoJugador2.mass) / pBotinJugador2.mass;
+			FuerzapCirculoJugador2.x = (FuerzapBotinJugador2.x * pCirculoJugador2.mass) / pBotinJugador2.mass;
+		
+			pCirculoJugador2.ApplyForce(FuerzapCirculoJugador2);
+			pCirculoJugador2.ApplyImpulse(FuerzapCirculoJugador2,CentroDeMasapCirculoJugador2);
+				
+			pBotinJugador2.position.y = pCirculoJugador2.position.y + 4.5;
+			pBotinJugador2.position.x = pCirculoJugador2.position.x + 0.7;
+		}
+	
+		if(I == true && J == true && EstadoJ2 == 0)
+		{
+			FuerzapBotinJugador2.x = -50;
+			FuerzapBotinJugador2.y = -100;
+			EstadoJ2 = 3;
+		
+			FuerzapCirculoJugador2.y = (FuerzapBotinJugador2.y * pCirculoJugador2.mass) / pBotinJugador2.mass;
+			FuerzapCirculoJugador2.x = (FuerzapBotinJugador2.x * pCirculoJugador2.mass) / pBotinJugador2.mass;
+		
+		
+			pCirculoJugador2.ApplyForce(FuerzapCirculoJugador2);
+			pCirculoJugador2.ApplyImpulse(FuerzapCirculoJugador2,CentroDeMasapCirculoJugador2);
+		}
+		if(I == true && L == true && EstadoJ2 == 0)
+		{
+			FuerzapBotinJugador2.x = 50;
+			FuerzapBotinJugador2.y = -100;
+			EstadoJ2 = 2;
+		
+			FuerzapCirculoJugador2.y = (FuerzapBotinJugador2.y * pCirculoJugador2.mass) / pBotinJugador2.mass;
+			FuerzapCirculoJugador2.x = (FuerzapBotinJugador2.x * pCirculoJugador2.mass) / pBotinJugador2.mass;
+		
+		
+			pCirculoJugador2.ApplyForce(FuerzapCirculoJugador2);
+			pCirculoJugador2.ApplyImpulse(FuerzapCirculoJugador2,CentroDeMasapCirculoJugador2);
+		}
+		if(I == true && EstadoJ2 == 0)
+		{	
+			FuerzapBotinJugador2.x = 0;
+			FuerzapBotinJugador2.y = -55;
+			EstadoJ2 = 1;
+			FuerzapCirculoJugador2.y = (FuerzapBotinJugador2.y * pCirculoJugador2.mass) / pBotinJugador2.mass;
+			FuerzapCirculoJugador2.x = 0;
+		
+			pCirculoJugador2.ApplyForce(FuerzapCirculoJugador2);
+			pCirculoJugador2.ApplyImpulse(FuerzapCirculoJugador2,CentroDeMasapCirculoJugador2);
+		}
+	
+		if(EstadoJ2 == 5 || EstadoJ2 == 4)
+		{
+			pCirculoJugador2.velocity.x = 0;
+			pCirculoJugador2.velocity.y = 0;
+		
+			pBotinJugador2.position.x = pCirculoJugador2.position.x + 0.5;
+		
+			EstadoJ2 = 0;
+		}
+		if(J == true && EstadoJ2 == 0)
+		{
+			FuerzapBotinJugador2.x = -40;
+			FuerzapBotinJugador2.y = 0;
+			EstadoJ2 = 5;
+		
+			FuerzapCirculoJugador2.y = 0;
+			FuerzapCirculoJugador2.x = (FuerzapBotinJugador2.x * pCirculoJugador2.mass) / pBotinJugador2.mass;
+				
+			pCirculoJugador2.ApplyForce(FuerzapCirculoJugador2);
+			pCirculoJugador2.ApplyImpulse(FuerzapCirculoJugador2,CentroDeMasapCirculoJugador2);
+		}
+	
+		if(L == true && EstadoJ2 == 0)
+		{
+			FuerzapBotinJugador2.x = +40;
+			FuerzapBotinJugador2.y = 0;
+			EstadoJ2 = 4;
+		
+			FuerzapCirculoJugador2.y = 0;
+			FuerzapCirculoJugador2.x = (FuerzapBotinJugador2.x * pCirculoJugador2.mass) / pBotinJugador2.mass;
+		
+		
+			pCirculoJugador2.ApplyForce(FuerzapCirculoJugador2);
+			pCirculoJugador2.ApplyImpulse(FuerzapCirculoJugador2,CentroDeMasapCirculoJugador2);
+		}
+	
+		//Si hay gol cambio la posision de la pelota
+			if(FlagGolJ2 == true || FlagGolJ1 == true)
+			{
+				pelota.position.x = OX - 4.6;
+				pelota.position.y = OY - 10.8;
+				FlagTimer = true;
+				pelota.visible = false;
+			}
+		
+			if(FlagGolJ2 == true) FlagGolJ2 = false;
+			if(FlagGolJ1 == true) FlagGolJ1 = false;
+		
+		for(var i = 0; i < _world.m_contactCount;i++)
+		{
+			var contact = _world.contacts[i];
+		
+			if(contact.A.id == idPiso && contact.B.id == idBotinJ1 || contact.B.id == idPiso && contact.A.id == idBotinJ1)
+			{	
+				//Codifico el Movimineto de Jugador1
+				if(EstadoJ1 == 1 || EstadoJ1 == 2 || EstadoJ1 == 3 )
+				{
+					pCirculoJugador1.velocity.x = 0;
+					pCirculoJugador1.velocity.y = 0;
+					pBotinJugador1.position.y = OY - 1.7;
+					pCirculoJugador1.position.y = OY - 4.9;
+					pBotinJugador1.position.x = pCirculoJugador1.position.x - 0.5;
+					EstadoJ1 = 0;
+				}
+			}	
+		
+			//Codifico el Movimiento de Jugador2
+			if(contact.A.id == idPiso && contact.B.id == idBotinJ2 || contact.B.id == idPiso && contact.A.id == idBotinJ2)
+			{
+				if(EstadoJ2 == 1 || EstadoJ2 == 2 || EstadoJ2 == 3 )
+				{
+					pCirculoJugador2.velocity.x = 0;
+					pCirculoJugador2.velocity.y = 0;
+					EstadoJ2 = 0;
+				
+					pBotinJugador2.position.y = OY - 0.5;
+					pCirculoJugador2.position.y = OY - 4.9;
+					pBotinJugador2.position.x = pCirculoJugador2.position.x + 0.5;
+				}
+		
+			}
+		
+			//Analizo si la poelota entra al arco1
+			if(contact.A.id == idArco1 && contact.B.id == idPelota || contact.B.id == idArco1 && contact.A.id == idPelota)
+			{
+				if(FlagGolJ2 == false)
+				{
+					PuntajeJugador2++;
+					FlagGolJ2 = true;	
+				}
+			}
+		
+			//Analizo si la poelota entra al arco2
+			if(contact.A.id == idArco2 && contact.B.id == idPelota || contact.B.id == idArco2 && contact.A.id == idPelota)
+			{
+				if(FlagGolJ1 == false)
+				{
+					PuntajeJugador1++;
+					FlagGolJ1 = true;	
+				}
+			}
+		}
+	}
+}
+
+function Render() 
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(255,255,255,255)';
+        ctx.fillRect(0,0,2000,2000);
+		
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(OX,OY,1000,700);
+		
+		if(Status == 3)Jugar();
+		// dibujo la escena esquematica con el motor 
+		_world.Render(ctx);
+		
+		switch(Status)
+		{
+			case 0: Inicio(); break;
+			case 1: ElejirJugadoresYDificultad(); break;
+			case 2: Instrucciones(); break;
+			case 4: FinDelJuego(); break;
+		}
+		
+	}
+	
+}
+
+
+function RenderLoop() 
+{
+	
+		if (!init)
+			return;
+		
+		Render();
+		Update();
+		
+}
+
+function doKeyPress(e)
+{
+	
+	//presiono la a
+	if(e.keyCode == 97 || e.keyCode == 65)
+	{
+		if(Status == 1)
+		{
+			if(SpriteJugador1.p1 <= 0) SpriteJugador1.p1 = 1273;
+			else
+				SpriteJugador1.p1 -= AnchoEscudo;
+			
+			if(Indice1 == 19) Indice1 = 0;
+			else
+				Indice1++;	
+			
+			if(SpriteEscudoJugador1.p1 == 1273) SpriteEscudoJugador1.p1 = 0;	
+			else
+				SpriteEscudoJugador1.p1 += AnchoEscudo;	
+		}
+		
+	} 
+	//presiono la d
+	if(e.keyCode == 100 ||e.keyCode == 68)
+	{
+		if(Status == 1)
+		{
+			SpriteJugador1.p1 += AnchoEscudo;
+			if(SpriteJugador1.p1 > 1273) SpriteJugador1.p1 = 0;
+		
+			if(Indice1 == 0) Indice1 = 19;
+			else	
+				Indice1--;
+			
+			if(SpriteEscudoJugador1.p1 <= 0) SpriteEscudoJugador1.p1 = 1273;	
+			else
+				SpriteEscudoJugador1.p1 -= AnchoEscudo;
+		}
+		
+	} 
+	//preciono la j
+	if(e.keyCode == 74 || e.keyCode == 106)
+	{
+		if(Status == 1)
+		{
+			if(SpriteJugador2.p1 <= 0) SpriteJugador2.p1 = 1273;
+			else
+				SpriteJugador2.p1 -= AnchoEscudo;
+			
+			if(Indice2 == 0) Indice2 = 19;
+			else
+				Indice2--;	
+
+			if(SpriteEscudoJugador2.p1 <= 0) SpriteEscudoJugador2.p1 = 1273;	
+			else
+				SpriteEscudoJugador2.p1 -= AnchoEscudo;
+		}
+		
+	}	
+	//Presiono la l
+	if(e.keyCode == 76 || e.keyCode == 108)
+	{
+		if(Status == 1)
+		{
+			SpriteJugador2.p1 += AnchoEscudo;
+			if(SpriteJugador2.p1 > 1273) SpriteJugador2.p1 = 0;
+		
+			if(Indice2 == 19) Indice2 = 0;
+			else
+				Indice2++;
+		
+			SpriteEscudoJugador2.p1 += AnchoEscudo;
+			if(SpriteEscudoJugador2.p1 > 1273) SpriteEscudoJugador2.p1 = 0;	
+		}
+		
+	}	
+
+}
+
+function doKeyUp(e) 
+{
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+	if(Status == 3)
+	{
+		if(e.keyCode == 65 || e.keyCode == 97) a = false;
+		if(e.keyCode == 68 || e.keyCode == 100) d = false;
+		if(e.keyCode == 87 || e.keyCode == 119) w = false;
+		if(e.keyCode == 32) BarraEspaciadora = false;
+		if(e.keyCode == 74 || e.keyCode == 106) J = false;
+		if(e.keyCode == 76 || e.keyCode == 108) L = false;
+		if(e.keyCode == 73 || e.keyCode == 105) I = false;
+		if(e.keyCode == 13) Enter = false;
+		
+	}
+}
+
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+	if(Status == 3)
+	{
+		if(e.keyCode == 65 || e.keyCode == 97) a = true;
+		if(e.keyCode == 68 || e.keyCode == 100) d = true;
+		if(e.keyCode == 87 || e.keyCode == 119) w = true;
+		if(e.keyCode == 32) BarraEspaciadora = true;
+		if(e.keyCode == 74 || e.keyCode == 106) J = true;
+		if(e.keyCode == 76 || e.keyCode == 108) L = true;
+		if(e.keyCode == 73|| e.keyCode == 105) I = true;
+		if(e.keyCode == 13) Enter = true;
+		
+	}
+	
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+			ClickLeftButon();
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function loadscene()
+{
+	CentroDeMasapBotinJugador1.x = 0;
+	CentroDeMasapBotinJugador1.y = 0;
+	CentroDeMasapBotinJugador2.x = 0;
+	CentroDeMasapBotinJugador2.y = 0;
+	CentroDeMasapCirculoJugador1.x = 0;
+	CentroDeMasapCirculoJugador1.y = 0;
+	CentroDeMasapCirculoJugador2.x = 0;
+	CentroDeMasapCirculoJugador2.y = 0;
+	CentroDeMasaPelota.x = 0;
+	CentroDeMasaPelota.y = 0;
+	// piso
+	var p = _world.AddBox(OX - 4.5, OY + 1.5, 85, 1);
+    p.SetStatic();
+	p.id = idPiso;
+	p.visible = false;
+		
+	//Dibujo los arcos
+	var p = _world.AddBox(OX - 44.37,OY - 12.7, 5.5, 0.5);	
+	p.visible = false;
+	p.SetStatic();
+	
+	p = _world.AddBox(OX + 35.2,OY - 12.7, 5.5, 0.5);
+	p.visible = false;
+	p.SetStatic();
+	
+	//Dibujo la pelota
+	pelota = _world.AddCircle(OX - 4.6, OY - 10.8, 1.7);
+	pelota.img = ImgPelota;
+	pelota.id = idPelota;
+	pelota.visible = false;
+
+	
+	//dibujo Jugador1
+	pBotinJugador1 = _world.AddBox(OX - 35,OY - 1.2, 3, 2.5);
+	pBotinJugador1.img = ImgBotinJugador1;
+	pBotinJugador1.id = idBotinJ1;
+		
+	pCirculoJugador1 = _world.AddCircle(OX - 34,OY - 4.5, 2.8);
+	pCirculoJugador1.visible = false;
+	
+	//Dibujo Jugador2
+	pBotinJugador2 = _world.AddBox(OX + 28, OY - 0.5, 3, 2.5);
+	pBotinJugador2.img = ImgBotinJugador2;
+	pBotinJugador2.id = idBotinJ2;
+				
+	pCirculoJugador2 = _world.AddCircle(OX + 27,OY - 4.5, 2.8);
+	pCirculoJugador2.visible = false;
+	
+	
+	p = _world.AddBox(OX + 38, OY - 23.3, 0.5, 20.4);
+	p.visible = false;
+	p.SetStatic();
+	
+	p = _world.AddBox(OX- 47 , OY - 23.3, 0.5, 20.4);
+	p.visible = false;
+	p.SetStatic();
+	
+	p = _world.AddBox(OX + 38, OY - 5.9, 0.5, 12.4);
+	p.visible = false;
+	p.id = idArco2;
+	p.SetStatic();
+	
+	p = _world.AddBox(OX- 47 , OY - 5.9, 0.5, 12.4);
+	p.visible = false;
+	p.visible = idArco1;
+	p.SetStatic();
+	
+	var tri = [new Vector2(17.8,3), new Vector2(3,3), new Vector2(3,16.5)];
+	var tri2 = [new Vector2(73,3), new Vector2(87.9,3), new Vector2(87.9,16.5)];
+	
+	p =_world.AddPoly(tri,3); 
+	p.visible = false;
+	p.SetStatic();
+	p = _world.AddPoly(tri2,3);
+	p.visible = false;
+	p.SetStatic();
+	p =_world.AddBox(45.5,3.5,56, 0.5)
+	p.visible = false;
+	p.SetStatic();
+	
+	init = true;
+
+}
+
+function main()
+{   
+	document.addEventListener( "keyup", doKeyUp, true);
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("keypress", doKeyPress, true);	
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+	
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	loadscene();
+    setInterval(RenderLoop, elapsed_time * 1000);
+	
+	ImgInicio.src = 'Archivos png/Inicio.png';
+	ImgJugador1.src = 'Archivos png/VectorJugadores2.png';
+	ImgJugador2.src = 'Archivos png/VectorJugadores1.png';
+	ImgEscudos.src = 'Archivos png/VectorEscudos.png';
+	ImgCancha.src = 'Archivos png/Cancha.png';
+	ImgDificultad.src = 'Archivos png/VectorDificultades.png';
+	ImgBotinJugador1.src = 'Archivos png/Botin2.png';
+	ImgBotinJugador2.src = 'Archivos png/Botin1.png';
+	ImgCanchaJuego.src = 'Archivos png/Escenario.png';
+	ImgResTiemp.src = 'Archivos png/ResTiemp.png';
+	ImgMarco.src = 'Archivos png/Marco.png';
+	ImgFlechaIzquierda.src = 'Archivos png/FlechaIzquierda.png';
+	ImgFlechaDerecha.src = 'Archivos png/FlechaDerecha.png';
+	ImgArco1.src = 'Archivos png/arco1.png';
+	ImgArco2.src = 'Archivos png/arco2.png';
+	ImgPelota.src = 'Archivos png/PelotadePremierLeague.png';
+}
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="900" height="600"></canvas>
+</body>
+</html>
+ 

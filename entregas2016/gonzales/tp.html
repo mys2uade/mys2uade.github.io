@@ -1,0 +1,765 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+
+var MaxPuntaje=0;
+var Puntaje = 0;
+var status_Puntaje =false;
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+var gravityScale = 5.0;
+var gravity = new Vector2( 0, 10 * gravityScale );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+
+var init = false;
+var caja;
+
+var pC;
+var radio = 3;
+var idBola =100;
+var idlado1=200;
+var idlado2=250;
+var pelota;
+//variable de pelota
+var posx_pelota=55;
+var posy_pelota=15;
+var area;
+var lado1;
+var lado2;
+var cuerda=false;
+//VARIABLES DE MOVIMIENTO DE ARO
+var posx_tablero = 50;
+var posy_tablero = 70;
+var posx_limite = 4.1;
+var centro;
+var	posx_pel = 69;
+var	posy_pel = 0;	
+var status =0;	
+var canasta;
+//PARA EL MOVIMIENTO DE LA ESTRELLA
+var posx_estrella=0;
+var posy_estrella=1000;
+var tiempo_estrella=0;
+var activar=false;
+var mov =false;
+//posicion para sprite
+var pos_x;
+var pos_y;
+var velimg= 10;
+//para movimiento
+var posicion_x=0;
+var posicion_y=0;
+var bandera = false;
+//VARIABLE DE MOVIMIENTO ALEATORIO
+var posicion_area=0;
+// ESTADOS DE PANTALLLA
+var pantallas=0;
+var pause=false;
+var tiempo =60;
+var tiempo_juego=1;
+var timer1=0;
+var timer2 =0;
+var timer_mov =0;
+//HOY
+var timer_puntaje=0;
+var timer_miss=0;
+var posicion_miss=0;
+//estrella moviendo
+var timer_estrella= 0.01;
+
+
+var img_puntaje=new Image();
+var img_area = new Image();
+var img_pelota = new Image();
+var img_pelota2 = new Image();
+var img_fondo =new Image();
+var img_limite = new Image();
+var img_base = new Image();
+var img_logo =new Image();
+var img_play = new Image();
+var img_help =new Image();
+var img_inicio =new Image();
+var img_pausa =new Image();
+var img_seguir= new Image();
+var img_score = new Image();
+var img_tabla = new Image();
+var img_toque = new Image();
+var img_toque2 = new Image();
+var img_mov =new Image();
+var img_estrella = new Image();
+var img_estrella_moviendo = new Image();
+var img_tiempo = new Image();
+var img_miss = new Image();
+var img_mas =new Image();
+var masx=0;
+var masy=0;
+var timermas=0;
+//para el recorrido
+var timer_vector=0;
+var vector_historial = [];
+function Update() 
+{
+    _world.Update(elapsed_time);
+	
+	if (pantallas ==1){
+		
+
+		
+
+		if(pantallas!=3 || pause==false){
+			pelota.velocity.multiply(1 - 0.05*elapsed_time);
+		}
+		if (pelota.position.y>100){
+		   status =0;
+		   pelota.position.y = posy_pelota;
+		   pelota.position.x = posx_pelota;
+		   
+
+		   cuerda = false;
+		   
+		   pelota.velocity.Set(40 , 0);
+		   pelota.img= img_pelota;
+		   var pC = _world.AddJointConstraint(caja,pelota);
+		   pC.mark =1;
+		   
+		   posicion_area = Math.floor((Math.random() * 40) + 22);
+		   posx_tablero = posicion_area;
+		   area.position.x = posx_tablero;
+		   lado1.position.x= posx_tablero-posx_limite;
+		   lado2.position.x= posx_tablero+posx_limite;
+		   centro.position.x = posx_tablero;
+		}
+		
+		
+		
+		//status para encestar
+		
+		if(status==0){
+			if (pelota.position.x-radio>=posx_tablero-posx_limite-20 &&  pelota.position.x+radio<=posx_tablero+20)
+			{
+			  
+			  if (pelota.position.y-radio>=posy_tablero-10 &&  pelota.position.y+radio<=posy_tablero+3)
+			  {
+			  status =1;
+			  //console.log("status1");
+			  }
+			}
+		}
+		if(status==1){
+			if (pelota.position.x-radio>=posx_tablero-posx_limite-2 &&  pelota.position.x+radio<=posx_tablero+posx_limite+2)
+			{
+			  console.log("status1-a");
+			  if (pelota.position.y-radio>=posy_tablero+10 &&  pelota.position.y+radio<=posy_tablero+20)
+			  {
+			   console.log("status1-b");
+			  status =2;
+			  //console.log("status1-b");
+			  }
+			}
+		}
+
+		if(status==2){
+			if (pelota.position.x-radio>=posx_tablero-20 &&  pelota.position.x+radio<=posx_tablero+20)
+			{
+				if (pelota.position.y-radio>=posy_tablero+10 &&  pelota.position.y+radio<=posy_tablero+20)
+				{
+				status =3;
+				status_Puntaje =true;
+				}
+				console.log("algo");
+			}
+		}
+		if(status ==3 && status_Puntaje ==true){
+			timer_puntaje= 0.01;
+		   Puntaje+=10;
+		   status_Puntaje=false;
+		 }
+		 if(status!=3 && pelota.position.y>99)
+		 {
+			posicion_miss=pelota.position.x;
+			timer_miss=0.01;
+		 }
+		 	//Contacto
+	for(var i = 0; i < _world.m_contactCount;i++)
+	{
+		//contacto izquierdo
+		var contact = _world.contacts[i];
+		if(contact.A.id == idBola && contact.B.id == idlado1)
+		{
+			timer1=0.01;
+			pos_x = contact.A.position.x;
+			pos_y = contact.A.position.y;
+		}
+		else
+		{
+			if(contact.A.id == idlado1 && contact.B.id == idBola)
+			{
+			  timer1=0.01;
+			pos_x = contact.B.position.x;
+			pos_y = contact.B.position.y;
+			}
+		}
+		//Contacto derecho
+		if(contact.A.id == idBola && contact.B.id == idlado2)
+		{
+			timer2=0.01;
+			pos_x = contact.A.position.x;
+			pos_y = contact.A.position.y;
+		}
+		else
+		{
+			if(contact.A.id == idlado2 && contact.B.id == idBola)
+			{
+			  timer2=0.01;
+				pos_x = contact.B.position.x+radio;
+				pos_y = contact.B.position.y;
+			}
+		}
+	}
+	if(timer1 > 0)
+	{
+	
+		timer1 += velimg * elapsed_time;
+		if(timer1 >= 25)
+		{
+			timer1 = 0;
+			
+		}
+	}
+	
+	if(timer2 > 0)
+	{
+	
+		timer2 += velimg * elapsed_time;
+		if(timer2 >= 25)
+		{
+			timer2 = 0;
+			
+		}
+	}	
+//ESTRELLA
+	if (tiempo_estrella>=5 && activar== false)
+	{
+		console.log("activara");
+		posx_estrella= Math.floor((Math.random() * 400) + 220);
+		tiempo_estrella =0;
+		activar =true;
+		
+	}
+	if(activar ==true){
+		if(posy_estrella>=450 && mov==false){
+			posy_estrella-=(velimg*5)*elapsed_time;
+				console.log("arriba");			
+		}
+		else
+		{
+			posy_estrella+=(velimg*5)*elapsed_time;
+			mov=true;
+			console.log("abajo y mov");
+		}
+		
+	if((pelota.position.x*10)-radio+10>=posx_estrella && (pelota.position.x*10)+radio+10<=posx_estrella+50)
+		{
+			if((pelota.position.y*10)+radio+10>=posy_estrella && (pelota.position.y*10)+radio+10<=posy_estrella+50){
+				masx= posx_estrella;
+				masy= posy_estrella;
+				timermas=0.01;
+				console.log("contacto estrella");
+				posy_estrella=1000;
+				tiempo+=3;
+				activar=false;
+				mov=false;
+			}
+		}
+			if (posy_estrella>=1000 && mov==true)
+			{
+				console.log("desactivar");
+				activar=false;
+				mov=false;
+			}
+	}
+	if(timer_puntaje>=2)
+	{
+		timer_puntaje=0;
+	}
+	if(timer_miss>=1)
+	{
+		timer_miss=0;
+	}
+	if(timermas>=1)
+	{
+		timermas=0;
+	}
+	
+	if(timer_estrella>0 && activar==true)
+	{
+		timer_estrella += 2 * elapsed_time;
+		if(timer_estrella >= 2)
+		{
+			timer_estrella = 0.01;
+			
+		}
+	}
+	
+	//Best score
+	if(Puntaje>= MaxPuntaje){
+		MaxPuntaje=Puntaje;
+	}
+	
+	}
+
+}
+
+function Render() 
+{
+
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		ctx.drawImage(img_fondo, 0,0,950,1000);
+				ctx.font ="70px arial";
+				ctx.drawImage(img_tabla, 140,30,200,200);
+				ctx.fillText( Puntaje, 201, 194);
+				ctx.drawImage(img_tiempo,678,30,130,100);
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx,ox,oy,ex,ey);
+
+		if (pantallas ==0){
+		//MENU PRINCIPAL
+			
+			ctx.drawImage(img_fondo, 0,0,950,1000);
+			ctx.drawImage(img_logo, 180,50,600,200);
+			ctx.drawImage(img_play, 410,450,100,80);
+			ctx.drawImage(img_help, 410,550,100,80);
+
+		}
+		//INSTRUCCIONES
+		if (pantallas ==2){
+			ctx.drawImage(img_fondo, 0,0,950,1000);
+			ctx.drawImage(img_logo, 180,50,600,200);
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "23px Arial"
+			ctx.fillText('Enceste la mayor cantidad.',307,450);
+			ctx.fillText('de pelotas posible en menos',307,480);
+			ctx.fillText('de 60 segundos',307,510);
+			ctx.fillText('Boton derecho del mouse para ',307,540);
+			ctx.fillText('soltar pelota',307,570);
+			ctx.fillText('Tecla P para pausar partida',307,600);
+			ctx.fillText('si toca las monedas obtiene mas tiempo',307,630);			
+			ctx.drawImage(img_inicio, 410,650,100,80);
+		}
+		//TERMINAR
+		if(pantallas==3){
+			  ctx.drawImage(img_fondo, 0,0,950,1000);
+			  ctx.drawImage(img_logo, 180,50,600,200);
+			  ctx.drawImage(img_score, 0,500,950,200);
+			  ctx.font ="60px arial";
+			  ctx.fillText(Puntaje, 600, 672);
+			  ctx.font ="60px arial";
+			  ctx.fillText(MaxPuntaje, 600, 562);
+			  ctx.drawImage(img_seguir, 380,750,100,80);
+			  ctx.drawImage(img_inicio, 510,750,100,80);
+			  
+			}
+		//PAUSA
+		if(pantallas==1 && pause==true){
+			  ctx.fillStyle = 'rgba(105,105,105,0.7)';
+			  ctx.fillRect(0,0,2000,2000);
+			  ctx.drawImage(img_fondo, 0,0,950,1000);
+			  ctx.drawImage(img_logo, 180,50,600,200);
+			  ctx.drawImage(img_pausa, 400,350,200,100);
+			  
+			  ctx.drawImage(img_seguir, 380,450,100,80);
+			  ctx.drawImage(img_inicio, 510,450,100,80);
+		}
+		//pantalla de juego
+		if(pantallas==1 && pause==false){
+		
+				timer_mov++;
+				vector_historial.push(pelota.position.Clone());
+				
+				
+				if(timer_mov > 50)
+				{
+					vector_historial.shift();
+					
+
+					for(var i=0;i<50;i++)
+					{
+						var pos_pelota = vector_historial[i];
+						
+						ctx.drawImage(img_pelota2, pos_pelota.x*10-10,pos_pelota.y*10-10,radio*20/50*i,radio*20/50*i);					
+					}
+					console.log("Actual: " + pelota.position.x + " VECTOR: " + pos_pelota.x + " L: " +  vector_historial.length);
+					
+					//ctx.drawImage(img_pelota2, vector_historial[0].x*10, vector_historial[0].y*10,radio*20,radio*20);
+					//vector_historial.shift();
+				}
+				
+				
+				if(timer_estrella>0)
+				{
+					ctx.drawImage(img_estrella_moviendo, 77*Math.floor(timer_estrella), 0, 80, 80, posx_estrella,posy_estrella, 70, 70);
+				}
+				
+				
+				if(timer_puntaje>0)
+				{
+					ctx.drawImage(img_puntaje,posx_tablero*10-40,posy_tablero*10,130,130);
+				}
+				if(timer_miss>0)
+				{
+					ctx.drawImage(img_miss,posicion_miss*10,850,80,80);				
+				}
+				if(timermas>0)
+				{
+					ctx.drawImage(img_mas,masx,masy,80,80);				
+				}
+				
+				if (timer1 > 0)
+				{
+					ctx.drawImage(img_toque, 61*Math.floor(timer1), 0, 80, 80, pos_x * ex - 30,pos_y * ey - 30, 100, 180);
+				}
+				if (timer2 > 0)
+				{
+					ctx.drawImage(img_toque2, 61*Math.floor(timer2), 0, 80, 80, pos_x * ex - 30,pos_y * ey - 30, 100, 180);
+				}
+				if(cuerda==false){
+					ctx.beginPath();
+					ctx.moveTo(520,10);
+					ctx.lineTo(pelota.position.x*10,pelota.position.y*10);
+					ctx.lineWidth =5;
+					ctx.strokeStyle = '#958623';
+					ctx.stroke();
+				}
+
+				//ctx.drawImage(img_estrella,posx_estrella,posy_estrella,50,50);
+				
+					ctx.font ="60px arial";
+				ctx.fillText(Math.ceil(tiempo).toString(), 710, 100);
+		}
+		
+		
+
+    }
+}
+
+
+function RenderLoop() 
+{
+    if (!init)
+		return;
+    Render();
+	if(pantallas==1 && pause==false){
+		if(timer_vector<=0)
+		{
+		timer_vector+=elapsed_time;
+		}
+		
+		if (timer_puntaje>0)
+		{
+			timer_puntaje+=elapsed_time;	
+		}
+		if(timer_miss>0)
+		{
+			timer_miss+=elapsed_time;
+		}
+		if(timermas>0)
+		{
+			timermas+=elapsed_time;
+		}
+		if(tiempo_juego>0)
+		{
+			tiempo_juego-=elapsed_time;
+			if(tiempo_juego<=0)
+			{
+				tiempo_juego=0;
+			}
+			
+		}
+		tiempo-=elapsed_time;
+		if(activar==false){
+			tiempo_estrella+=elapsed_time;
+		}
+		if(tiempo<=0)
+		{	
+			pantallas=3;
+			tiempo=60;
+			tiempo_estrella=0;
+		}
+	}
+	Update();
+}
+
+
+function doKeyUp(e) 
+{   
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+}
+
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+	if(e.keyCode == 80)
+	{
+		if (pantallas ==1 && pause==false){
+			pause=true;
+		}
+	}
+	
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+		//JUGAR
+			if(pantallas==0){
+				if((mouse_x>410 && mouse_x<510) &&(mouse_y>450 && mouse_y<530)){
+					pantallas=1;
+					tiempo_juego=1;
+				}
+			}
+			if(pantallas==0){
+			
+				if((mouse_x>410 && mouse_x<510) &&(mouse_y>550 && mouse_y<630)){
+						pantallas=2;
+						tiempo_juego=1;
+				}
+			}
+			
+			if (pantallas==2){
+				if((mouse_x>410 && mouse_x<510) &&(mouse_y>650 && mouse_y<730)){
+					pantallas=0;
+					tiempo_juego=1;
+				}
+			}
+			//PAUSA
+			 if(pause==true){
+			 //JUGAR
+			 	if((mouse_x>380 && mouse_x<480) &&(mouse_y>450 && mouse_y<530)){
+					pantallas=1;
+					pause=false;
+					tiempo_juego=1;
+				}
+				//PANTALLA PRINCIPAL
+				if((mouse_x>510 && mouse_x<610) &&(mouse_y>450 && mouse_y<530)){
+					pantallas=0;
+					pause =false;
+					tiempo_juego=1;
+				}
+			 } 
+			 
+			 //PANTALLA FINAL VOLVER
+			 if(pantallas==3){
+				if((mouse_x>380 && mouse_x<480) &&(mouse_y>750 && mouse_y<830)){
+					Puntaje=0;
+					pantallas=1;
+					tiempo=60;
+					tiempo_juego=1;
+				}
+			}
+			if(pantallas==3){
+			
+				if((mouse_x>510 && mouse_x<610) &&(mouse_y>750 && mouse_y<830)){
+						pantallas=0;
+						tiempo_juego=1;
+						Puntaje=0;
+				}
+			}
+			//SOLTAR PELOTA  
+		   if(pantallas==1 && tiempo_juego==0){
+				borrarConstraint();
+				cuerda= true;
+		   }
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function borrarConstraint()
+{
+	// borra el constrain marcado con "mark"
+	var cant = _world.m_constraintCount;
+	_world.m_constraintCount = 0;
+	for(var i=0;i<cant;++i)
+	{
+		var c = _world.constraints[i];
+		if (typeof c.mark == "undefined") {
+			_world.constraints[_world.m_constraintCount] = c;
+			_world.m_constraintCount++;
+		}
+	}    
+}
+
+
+function loadscene()
+{
+	 centro=_world.AddBox(posx_tablero, posy_tablero+20, 5, 20);
+	 centro.SetStatic();
+	 centro.img = img_base;
+	 
+	
+	
+
+	//ARO 
+    area = _world.AddBox(posx_tablero, posy_tablero, 20, 20);
+    area.SetStatic();
+	area.img = img_area;
+	
+	//COSTADOS DE CANASTA
+    lado1 = _world.AddBox(posx_tablero-posx_limite, posy_tablero+5, 1, 2);
+    lado1.SetStatic();
+	lado1.restitution=0.35;
+    lado1.visible = false;
+	lado2 = _world.AddBox(posx_tablero+posx_limite, posy_tablero+5, 1, 2);
+    lado2.SetStatic();
+	lado2.restitution=0.35;
+    lado2.visible =false;
+
+	//SOSTEN DE PELOTA
+	caja = _world.AddBox(50,0,2,2);
+	caja.SetStatic();
+	caja.visible =false;
+	centro.collider_list= [caja];
+	//PELOTA
+	pelota = _world.AddCircle(posx_pelota,posy_pelota,radio);
+	pelota.img= img_pelota;
+		
+	
+	pelota.velocity.Set(40 , 0);
+	pelota.id = idBola;
+	pelota.restitution = 0;
+	//CUERDA
+	pC = _world.AddJointConstraint(caja,pelota);
+	pC.visible = true;
+	pC.mark =1;
+	
+	//COSTADOS DE PANTALLA
+	var p=_world.AddBox(10, 49, 1, 100);
+	p.SetStatic();
+	p.img =img_limite;
+	p.collider_list = [pelota];
+	p.restitution =1;
+	p.id =idlado1;
+	var p=_world.AddBox(80, 49, 1, 100);
+	p.SetStatic();
+	p.id=idlado2;
+	p.img =img_limite;
+	area.collider_list = [caja];
+	pelota.collider_list = [lado1,lado2,p];
+	p.restitution =1;
+    init = true;
+	
+	
+	//base
+	
+}
+
+
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	img_area.src = 'aro.png';
+	img_pelota.src = 'pelota.png';
+		img_pelota2.src = 'pelota.png';
+     img_fondo.src = 'fondo.png';
+	 img_limite.src ='limite.png';
+	 img_base.src ='base.png';
+	 img_logo.src ='titulo.png';
+	 img_play.src ='play.png';
+	 img_help.src ='help.png';
+	 img_inicio.src ='inicio.png';
+     img_pausa.src ='pausa.png';
+	 img_seguir.src ='seguir.png';
+	 img_score.src= 'score.png';
+	 img_tabla.src= 'tabla.png';
+	 img_toque.src= 'toque.png';
+	 img_toque2.src= 'toque2.png';
+	 img_estrella.src = 'estrella.png';
+	 img_estrella_moviendo.src = 'estrella_mueve.png';
+	 img_mov.src= 'movimiento.png';
+	 img_tiempo.src= 'tiempo.png';
+	 img_puntaje.src= 'puntos.png';
+	 img_miss.src= 'miss.png';
+	 img_mas.src= 'mas.png';
+	loadscene();
+	
+    setInterval(RenderLoop, elapsed_time * 1000);
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="950" height="1000"></canvas>
+</body>
+</html>

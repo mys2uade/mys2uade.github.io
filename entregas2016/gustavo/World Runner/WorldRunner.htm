@@ -1,0 +1,624 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<title>World Runner</title>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+    var elapsed_time = 1/60;
+    var canvas;
+    var ctx;
+    var	ex = 10;
+    var ey = 10;
+    var ox = 20;
+    var oy = 20;
+
+    //MENU
+    var menuOk = false;
+
+    var time = 0;
+
+    var win = false;
+
+    var tStop = 0;
+    var lastDist = 0;
+
+    // pos y tamaño de pantalla
+    var OX = 1;
+    var OY = 1;
+    var DX = 90;
+    var DY = 85;
+
+    var Objetivo = null;
+
+    // posicion del mouse
+    var mouse_x = 0;
+    var mouse_y = 0;
+
+    var gravity = new Vector2( 0, 29.8 );
+    var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+    var _world = new World();
+    var init = false;
+    var Status = 0;
+
+    //Penguin
+    var idPenguin = 9898;
+    var Penguin = null;
+    var posPenguin = {x: 4, y: 2};
+    var AnchoPenguin = 5;
+    var AltoPenguin = 7;
+    var imgPenguin = document.createElement("IMG");
+    imgPenguin.src = "Images/penguin.png";
+    var massPenguin = 100;
+    var Jumping = 0;
+
+    var car = null;
+    var w1 = null;
+    var w2 = null;
+    var idCar = 9899;
+	var idWheel = 9897;
+    var imgWheel = document.createElement("IMG");
+    imgWheel.src = "Images/wheel.png";
+    var imgCar = document.createElement("IMG");
+    imgCar.src = "Images/Car.png";
+
+    //Bala
+    var Bala = null;
+    var Balas = [{bala : null, lifeTime: 0, bClass: 0, active: false}];
+    var posBala = {x: 0, y: 0};
+    var Radio = AltoPenguin / 2;
+    var SM = 25;
+    var MaxLifeTime = 1000;
+    var MaxEXP = 50;
+    
+    var idFloor = 9000;
+    var idWallIz = 9001;
+    var idWallDe = 9002;
+    var idProceduralFloor = 9003;
+	var idRock = 9004;
+	var idTree1 = 8999;
+	var idCloud = 8898;
+	var idMountain = 8897;
+	var idMine = 9110;
+	var idMineE = 9111;
+	var idFlag = 8888;
+	
+    var precision = 8;
+
+    //WORLD POS
+    var wordlPos = 0.0;
+    
+    var back = document.createElement("IMG");
+    back.src = "Images/background2.png";
+
+    //Piso
+    var PosPiso = { x: 42, y: 0 };
+	var p = null;
+	var pi = null;
+	
+    var floors = [];
+	
+	//Obstaculos
+	var rocks = [];
+    var imgRock = document.createElement("IMG");
+    imgRock.src = "Images/Rock.png";
+	
+    //Mine
+	var mines = [];
+	var imgMine = document.createElement("IMG");
+	imgMine.src = "Images/Landmine.png";
+	var imgExp = document.createElement("IMG");
+	imgExp.src = "Gif/Explosion";
+
+	//Flag
+	var imgFlag = document.createElement("IMG");
+	imgFlag.src = "Images/Flag.png";
+	var flag = null;
+
+    // --------------- ENVIROMENT ------------------
+	
+	//Tree
+	var trees = [];
+    var imgTree1 = document.createElement("IMG");
+    imgTree1.src = "Images/Tree1.png";
+
+    //Cloud
+    var clouds = [];
+    var imgCloud = document.createElement("IMG");
+    imgCloud.src = "Images/Cloud.png";
+
+    //Mountain
+    var mountains = [];
+    var imgMountain = document.createElement("IMG");
+    imgMountain.src = "Images/Mountain.png";
+
+    // --------------- CAR ADDONS -------------------
+    
+    //BOOSTER
+    var booster;
+    var imgBoosterOff = document.createElement("IMG");
+    imgBoosterOff.src = "Images/Booster Off.png";
+    var imgBoosterOn = document.createElement("IMG");
+    imgBoosterOn.src = "Images/Booster On.png";
+
+    // --------------- MENU -------------------------
+
+    var imgMenu = document.createElement("IMG");
+    imgMenu.src = "Images/Menu.png";
+
+	
+    // ------------------- HUD ----------------------
+	
+    var imgSpeedMeter = document.createElement("IMG");
+    imgSpeedMeter.src = "Images/SpeedMeter.png";
+	
+    var imgNeedle = document.createElement("IMG");
+    imgNeedle.src = "Images/Needle.png";
+	
+
+    function Update() 
+    {
+        _world.Update(elapsed_time);
+        time++;
+        for (var i = 0; i < _world.m_contactCount; ++i) {
+            var Contact = _world.contacts[i];
+            for (var oi = 9001; oi < 9300; oi++) {
+                if (Contact.A.id == idWheel && Contact.B.id == oi || Contact.A.id == oi && Contact.B.id == idWheel) {
+                    Jumping = 0;
+                }
+            }
+            
+            if (Contact.A.id == idWheel && Contact.B.id == idMine) {
+                car.ApplyForce(new Vector2(getRandomInt(-2,2),-30000));
+				Contact.B.img = imgExp;	
+				Contact.B.gifPath = "Gif/Explosion/";
+				Contact.B.gifExt = ".gif";
+				Contact.B.gif = 25;
+				Contact.B.height = 20;
+				Contact.B.width = 20;	
+				Contact.B.position.y -= 8;
+				Contact.B.collider_list = [];
+				Contact.B.id = idMineE;
+            }
+            if (Contact.A.id == idMine && Contact.B.id == idWheel) {
+                car.ApplyForce(new Vector2(getRandomInt(-2,2),-30000));
+				Contact.A.img = imgExp;
+				Contact.A.gifPath = "Gif/Explosion/";
+				Contact.A.gifExt = ".gif";
+				Contact.A.gif = 25;
+				Contact.A.height = 20;
+				Contact.A.width = 20;
+				Contact.A.position.y -= 8;
+				Contact.A.collider_list = [];
+				Contact.A.id = idMineE;
+            }
+			/*
+            if (Contact.A.id == idCar && Contact.B.id == idWallIz || Contact.A.id == idWallIz && Contact.B.id == idCar) {
+                for (var oi = 0; oi < _world.m_bodyCount; oi++) {
+                    if (_world.bodies[oi].id > 9002 && _world.bodies[oi].id < 9011) {
+                        _world.bodies[oi].position.x += 0.1;
+                    }
+                }
+                car.position.x += 0.1;
+            }
+            */
+
+            if (Contact.A.id == idCar && Contact.B.id == idProceduralFloor || Contact.A.id == idProceduralFloor && Contact.B.id == idCar) {
+                win = true;
+            }
+        }
+        if (car.position.x > (OX + DX * 1.9) / 2) {
+            wordlPos += Math.floor((car.position.x - (OX + DX * 1.9) / 2 - 1)*100)/100;
+            for (var oi = 0; oi < _world.m_bodyCount; oi++) {
+                if (_world.bodies[oi].id > 9002 && _world.bodies[oi].id < 9300) {
+                    _world.bodies[oi].position.x -= car.position.x - (OX + DX * 1.9)/2 - 1; 
+                }
+                if (_world.bodies[oi].id == idTree1 || _world.bodies[oi].id == idCloud || _world.bodies[oi].id == idMountain) {
+					_world.bodies[oi].position.x -= (car.position.x - (OX + DX * 1.9)/2 - 1)/_world.bodies[oi].moveFact; 
+				}
+            }
+            w1.position.x -= car.position.x - (OX + DX * 1.9) / 2 - 1;
+            w2.position.x -= car.position.x - (OX + DX * 1.9) / 2 - 1;
+            car.position.x -= car.position.x - (OX + DX * 1.9) / 2 - 1;			
+			car.SetInertia(100);
+        }
+
+        var magV = Math.sqrt(car.velocity.x * car.velocity.x + car.velocity.y * car.velocity.y)
+        if (((lastDist == Math.floor(wordlPos) && lastDist != 0) || magV < 1) && time > 10) {
+            tStop++;
+            if(tStop > 100) win = true;
+        } else {
+            tStop = 0;
+        }
+        lastDist = Math.floor(wordlPos);
+
+    }
+	var rot = 0;
+    function Render() 
+    {
+        //console.log(Objetivo.position.y);
+        if (canvas.getContext)
+        {
+            // borro la pantalla
+            //ctx.fillStyle = 'rgba(0,0,0,128)';
+            //ctx.fillRect(0, 0, 2000, 2000);
+            if (menuOk) {
+                ctx.drawImage(back, 0, 0, 2000, 2000);
+                ctx.stroke();
+
+
+                ctx.beginPath();
+                /*
+                ctx.lineWidth = "6";
+                ctx.strokeStyle = "red";
+                ctx.rect(0, 520, 2000, 1);
+                ctx.stroke();
+                ctx.lineWidth = "1";
+                */
+                // dibujo la escena esquematica con el motor 
+                _world.Render(ctx);
+				ctx.drawImage(imgSpeedMeter, 50,700,180,180);
+				ctx.save();
+				ctx.translate(140, 790);
+				ctx.rotate(rot);
+				rot = 4.75/110 * Math.sqrt(car.velocity.x*car.velocity.x);
+				ctx.drawImage(imgNeedle, -90,-90,180,180);
+				ctx.restore();
+				ctx.font = "10px Arial";
+				//ctx.fillText(Math.floor(Math.sqrt(car.velocity.x*car.velocity.x + car.velocity.y*car.velocity.y))+"KM/H", 120, 855);
+				ctx.fillText(Math.floor(Math.sqrt(car.velocity.x*car.velocity.x))+"KM/H", 120, 855);
+            } else {
+                ctx.drawImage(back, 0, 0, 2000, 2000);
+                ctx.stroke();
+                ctx.drawImage(imgMenu, 0, 0, 1800, 900);
+                ctx.stroke();
+
+
+                //ctx.beginPath();
+            }
+		
+        }
+    }
+
+
+    function RenderLoop() 
+    {
+        if (!init)
+            return;
+        if (!menuOk) {
+            Render();
+            return;
+        }
+        if (!win) {
+            Update();
+            Render();
+            ctx.font = "100px Arial";
+			var gradient=ctx.createLinearGradient(0,0,canvas.width,0);
+			gradient.addColorStop("0","magenta");
+			gradient.addColorStop("0.5","blue");
+			gradient.addColorStop("1.0","red");
+			ctx.fillStyle=gradient;
+            ctx.fillText("Distancia: " + Math.floor(wordlPos), 450, 400);
+            ctx.font = "50px Arial";
+			var gradient1=ctx.createLinearGradient(0,0,canvas.width,0);
+			gradient1.addColorStop("0","blue");
+			gradient1.addColorStop("0.5","red");
+			gradient1.addColorStop("1.0","black");
+			ctx.fillStyle=gradient1;
+            ctx.fillText("Max Dist: " + localStorage.getItem('highScore'), 450, 450);
+        } else {
+            ctx.font = "100px Arial";
+			var gradient=ctx.createLinearGradient(0,0,canvas.width,0);
+			gradient.addColorStop("0","red");
+			gradient.addColorStop("0.5","yellow");
+			gradient.addColorStop("1.0","red");
+			// Fill with gradient
+			ctx.fillStyle=gradient;
+            ctx.fillText("FIN!", 500, 300);
+			if(localStorage.getItem('highScore') < Math.floor(wordlPos))
+				localStorage.setItem('highScore', Math.floor(wordlPos));
+        }
+    }
+
+
+    function doKeyDown(e) {
+        var xPos = (mouse_x - ox) / ex;
+        var yPos = (mouse_y - oy) / ey;
+        /*
+        if (e.keyCode == 38) Jump();
+        if (e.keyCode == 39) {
+            Penguin.velocity.x = 10;
+            Penguin.dynamicFriction = 0;
+            Penguin.staticFriction = 0;
+        }
+        if (e.keyCode == 37) {
+            Penguin.velocity.x = -10;
+            Penguin.dynamicFriction = 0;
+            Penguin.staticFriction = 0;
+        }
+		*/
+        if (e.keyCode == 32) {
+            Jump();
+        };
+        if (e.keyCode == 65) {
+            car.orient -= 0.09;
+			car.angularVelocity = 0;
+        };
+        if (e.keyCode == 68) {
+            car.orient += 0.09;
+			car.angularVelocity = 0;
+        };
+    }
+
+    function doKeyUp(e) {
+        var xPos = (mouse_x - ox) / ex;
+        var yPos = (mouse_y - oy) / ey;
+        /*
+        if (e.keyCode == 39) {
+            Penguin.dynamicFriction = 0.5;
+            Penguin.staticFriction = 0.3;
+        }
+        if (e.keyCode == 37) {
+            Penguin.dynamicFriction = 0.5;
+            Penguin.staticFriction = 0.3;
+        }*/
+    }
+
+    function Jump() {
+        if (Jumping < 1) {
+            Jumping++;
+			//car.ApplyImpulse(new Vector2(0,-300), new Vector2(car.position.x,car.position.y));
+			var tempWAV = w1.angularVelocity;
+			var tempWAV2 = w2.angularVelocity;
+			w1.ApplyImpulse(new Vector2(0, -2000), w1.position);
+			w1.angularVelocity = tempWAV;
+			w2.ApplyImpulse(new Vector2(0, -2000), w2.position);
+			w2.angularVelocity = tempWAV2;
+			//console.log(Jumping);
+            //Penguin.velocity.y = -20;
+        }
+    }
+
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min)) + min;
+    }
+
+    function onMouseMove() 
+    {
+	    var xPos = window.event.offsetX;
+	    var yPos = window.event.offsetY;
+
+        // actualizo la posicion del mouse
+	    mouse_x = xPos;
+	    mouse_y = yPos;
+	    //console.log(xPos + " | " + yPos);
+	    //Penguin.SetOrient(Math.atan(posPenguin.y - yPos / xPos - posPenguin.x));
+    }
+
+    function onMouseDown(e) {
+        e = e || window.event;
+        switch (e.which)
+        {
+            case 1:
+                menuOk = true;
+                break;
+            case 2:
+                // middle button
+                break;
+            case 3:
+                // right button
+                break;
+        }
+    }
+
+
+    function onMouseUp(e) {
+        e = e || window.event;
+        switch (e.which) {
+            case 1:
+                // Left button
+                break;
+            case 2:
+                // middle button
+                break;
+            case 3:
+                // right button
+                break;
+        }
+    }
+
+
+
+    function loadscene()
+    {
+        if (localStorage.getItem('highScore') == null)
+            localStorage.setItem('highScore', 0);
+        //Penguin
+        /*
+        Penguin = _world.AddBox(OX + posPenguin.x, DY - posPenguin.y + OY, AnchoPenguin, AltoPenguin);
+        Penguin.shape.SetCenterOfMass(new Vector2(-3, 0));
+        Penguin.img = imgPenguin;
+        Penguin.SetMass(massPenguin);
+        Penguin.id = idPenguin;
+        Penguin.SetInertia(0);
+        //Penguin.SetStatic();
+        */
+
+        //CAR
+        car = _world.AddBox(OX + posPenguin.x + 4, DY - posPenguin.y + OY - 15, 16, 6);
+        car.img = imgCar;
+        car.id = idCar;
+        car.SetMass(8);
+		car.ApplyForce(new Vector2(40000,0));
+        w1 = _world.AddCircle(OX + posPenguin.x, DY - posPenguin.y + OY - 10, 3);
+		w1.id = idWheel;
+		w1.renderOrder = 4;
+        w2 = _world.AddCircle(OX + posPenguin.x + 8, DY - posPenguin.y + OY - 10, 3);
+        w2.id = idWheel;
+		w2.renderOrder = 4;
+		//w1.angularVelocity = 100;
+        w2.angularVelocity = 100;
+        w1.img = imgWheel;
+        w2.img = imgWheel;		
+		w2.dynamicFriction = 0.9;
+
+
+        //_world.AddDistanceConstraint(car, new Vector2(-3, 0), w1, new Vector2(0, 0));
+        //_world.AddDistanceConstraint(car, new Vector2(3, 0), w2, new Vector2(0, 0));
+        //_world.AddDistanceConstraint(car, new Vector2(3, 0), w1, new Vector2(0, 0));
+        //_world.AddDistanceConstraint(car, new Vector2(-3, 0), w2, new Vector2(0, 0));
+        _world.AddDistanceConstraint(car, new Vector2(-7, 0), w1, new Vector2(0, 0));
+        _world.AddDistanceConstraint(car, new Vector2(7, 0), w2, new Vector2(0, 0));
+        _world.AddDistanceConstraint(car, new Vector2(-7, 0), w2, new Vector2(0, 0));
+        _world.AddDistanceConstraint(car, new Vector2(7, 0), w1, new Vector2(0, 0));
+        //_world.AddDistanceConstraint(car, new Vector2(3, 0), w1, new Vector2(0, 0));
+        //_world.AddDistanceConstraint(car, new Vector2(-3, 0), w2, new Vector2(0, 0));
+        //_world.AddDistanceConstraint(w2, new Vector2(0, 0), w1, new Vector2(0, 0));
+	
+        //paredes
+        pi = _world.AddBox(0, (OY + DY) / 2, 2, DY);
+        pi.SetStatic();
+        pi.id = idWallIz;
+
+        // piso
+        p = _world.AddBox(OX + PosPiso.x,OY + DY - PosPiso.y,DX*3,2);
+        p.SetStatic();
+        p.id = idFloor;
+
+        var temp;
+		var temp2;
+		var tempT;
+		var tempM;
+		var tempC;
+		var tempMM;
+		
+        var lastY = getRandomInt(3, 6);
+        //var lastY = 1;
+        var cY = getRandomInt(3, 6);
+        for (var i = 0; i < 2000; i++) {
+            cY = getRandomInt(3, 6);
+            temp = _world.AddPoly([new Vector2(precision * i, DY + OY - lastY), new Vector2(precision * (i + 1), DY + OY - cY), new Vector2(precision * i, DY + OY + 2), new Vector2(precision * (i + 1), DY + OY + 2)], 4);
+			var rockRandom = getRandomInt(0,15);
+			if(cY == lastY && rockRandom < 2){
+				temp2 = _world.AddTri(precision * i + precision/2, DY + OY - lastY - 5, precision * i, DY + OY - lastY, precision * (i + 1), DY + OY - cY);
+				temp2.SetStatic();
+				temp2.collider_list = [car,w1,w2];
+				temp2.id = idRock;
+				temp2.img = imgRock;
+				rocks.push(temp2);
+			}
+			var mineRandom = getRandomInt(0,30);
+			if(cY == lastY && mineRandom < 7){
+				tempM = _world.AddBox(precision * i + precision/2, DY + OY - lastY, 6, 3);
+				tempM.SetStatic();
+				tempM.collider_list = [car,w1,w2];
+				tempM.id = idMine;
+				tempM.img = imgMine;
+				mines.push(tempM);
+			}
+			
+			var tree1Random = getRandomInt(0,20);
+			if(tree1Random < 5){
+				var f = getRandomInt(1,5);
+				tempT = _world.AddBox(precision * i + precision / 2, DY + OY - lastY - 20 + (50 - 50/f)/2 - f*2, 30 / f, 50 / f);
+				tempT.SetStatic();
+				tempT.collider_list = [];
+				tempT.id = idTree1;
+				tempT.img = imgTree1;
+				tempT.onlyDraw = true;
+				tempT.moveFact = f;
+				tempT.renderOrder = 5-f;
+				trees.push(tempT);
+			}
+
+			var mountainRandom = getRandomInt(0, 10);
+			if (mountainRandom < 5) {
+			    var f = getRandomInt(1, 3);
+			    tempMM = _world.AddBox(precision * i + precision / 2, DY + OY - lastY - 25 + (50 - 50 / f) / 2 - f * 2, 60 / f, 70 / f);
+			    tempMM.SetStatic();
+			    tempMM.collider_list = [];
+			    tempMM.id = idMountain;
+			    tempMM.img = imgMountain;
+			    tempMM.onlyDraw = true;
+			    tempMM.moveFact = 5 + f;
+			    tempMM.renderOrder = 0 - f;
+			    mountains.push(tempMM);
+			}
+            lastY = cY;
+			temp.dynamicFriction = 1;
+            temp.SetStatic();
+            temp.collider_list = [car,w1,w2];
+            temp.id = idProceduralFloor;
+            floors.push(temp);
+
+            var cloudRandom = getRandomInt(0, 20);
+            if (cloudRandom < 5) {
+                var f = getRandomInt(1, 5);
+                tempC = _world.AddBox(precision * i + precision / 2, DY + OY - lastY - 80 + (50 - 50 / f) / 2 - f * 2, 50 / f, 30 / f);
+                tempC.SetStatic();
+                tempC.collider_list = [];
+                tempC.id = idCloud;
+                tempC.img = imgCloud;
+                tempC.onlyDraw = true;
+                tempC.moveFact = f;
+                tempC.renderOrder = 5 - f;
+                clouds.push(tempC);
+            }
+        }
+        /*
+        flag = _world.AddBox(localStorage.getItem('highScore'), DY + OY - 20, 50, 50);
+        flag.SetStatic();
+        flag.collider_list = [];
+        flag.id = idFlag;
+        flag.img = imgFlag;
+        */
+        car.collider_list = floors;
+		var pp = floors.concat(rocks);
+		pp.concat(mines);
+		pp.push(p);
+		pp.push(pi);
+		w1.collider_list = pp;
+		w2.collider_list = pp;
+		
+		
+		
+        //temp = _world.AddPoly([new Vector2(DX - 1,DY - 5),new Vector2(DX - 25, DY - 6), new Vector2(DX - 23, DY - 8)], 3);
+        init = true;
+
+    }
+
+    function main()
+    {   
+        document.addEventListener("keydown", doKeyDown, true);
+        document.addEventListener("keyup", doKeyUp, true);
+	    document.addEventListener("mousemove", onMouseMove, true);
+	    document.addEventListener("mousedown", onMouseDown, true);
+	    document.addEventListener("mouseup", onMouseUp, true);
+
+        canvas = document.getElementById('mycanvas');
+        ctx = canvas.getContext('2d');
+	    loadscene();
+	    setInterval(RenderLoop, elapsed_time * 1000);
+    } 
+
+
+</script>
+
+</head>
+<body onload="main();">
+    <div align="center">
+    	<canvas id="mycanvas" width="1800" height="900">
+	    </canvas>
+    </div>
+</body>
+</html>
+ 

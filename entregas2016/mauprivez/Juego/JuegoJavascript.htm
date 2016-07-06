@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+canvas {
+    border:1px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+</style>
+</head>
+<body onload="startGame()">
+<script>
+
+//Profe le dejo algunas dudas en el codigo
+
+var myGamePiece;
+
+var myObstacles = [];
+
+var mySound;
+
+var myMusic;
+
+var myScore;
+// Estaba pensando en hacer un variable que guarde el highscore de la maquina donde se jugo pero no se me ocurre como hacerlo. Alguna pista profe?? :P
+
+var myBackground;
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+/* 
+Profe: Tengo 2 ideas diferentes para un menu.
+
+La primera es poner una imagen arriba del canvas y un 2do boton abajo en el que uno cliquea cuando quiere empezar.
+
+La otra es algo mas parecido a lo que los otros hicieron, que es poner una imagen o algo parecido y cuando cliquee en un boton que empieze.
+
+Las instrucciones quedan donde estan ahora. Asi la gente no se olvida.
+*/
+
+function startGame() {
+    myGamePiece = new component(30, 30, "Pajaro1.jpg", 10, 120, "image"); //El problema que tengo es que me aparece el cuadrado blanco alrededor 
+	                                                                      //de la lmagen. No importa si es .png .gif o .jpg 
+    myGamePiece.gravity = 0.05;
+    myBackground = new component(960, 720, "FondoUsado.jpg", 0, 0, "background");
+	myScore = new component("30px", "Consolas", "black", 280, 40, "text");
+	mySound = new sound("GameOver.mp3");
+	myMusic = new sound("Tidecaller.mp3");
+	myMusic.play();
+    myGameArea.start();
+}
+
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = 600;
+        this.canvas.height = 300;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        updateGameArea();
+		
+		window.addEventListener('keydown', function (e) {
+            myGameArea.key = e.keyCode;
+        })
+		window.addEventListener('keyup', function (e) {
+            myGameArea.key = false;
+        })
+		
+        },
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+}
+
+function onMouseMove(){
+	    var xPos = window.event.offsetX;
+	    var yPos = window.event.offsetY;
+
+        // actualizo la posicion del mouse
+	    mouse_x = xPos;
+	    mouse_y = yPos;
+    }
+
+function onMouseDown(e) {
+        e = e || window.event;
+        switch (e.which){
+            case 1:
+                //menuOk = true; Agregarlo cuando el menu este completo y si es necesario
+                break;
+            case 2:
+                // middle button
+                break;
+            case 3:
+                // right button
+                break;
+        }
+    }
+
+function onMouseUp(e) {
+        e = e || window.event;
+        switch (e.which){
+            case 1:
+                // Left button
+                break;
+            case 2:
+                // middle button
+                break;
+            case 3:
+                // right button
+                break;
+        }
+    }
+
+function sound(src) {
+    this.sound = document.createElement("audio");
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.style.display = "none";
+    document.body.appendChild(this.sound);
+    this.play = function(){
+        this.sound.play();
+    }
+    this.stop = function(){
+        this.sound.pause();
+    }
+}
+
+function component(width, height, color, x, y, type) {
+    this.type = type;
+	if (type == "image" || type == "background") {
+		this.image = new Image();
+		this.image.src = color;
+    }
+    this.score = 0;
+    this.width = width;
+    this.height = height;
+    this.speedX = 0;
+    this.speedY = 0;    
+    this.x = x;
+    this.y = y;
+    this.gravity = 0;
+    this.gravitySpeed = 0;
+	
+    this.update = function() {
+        ctx = myGameArea.context;
+        if (type == "image" || type == "background") {
+			ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+			if (type == "background") {
+                ctx.drawImage(this.image, this.x + this.width, this.y, this.width, this.height);
+            }
+        } else if (this.type == "text") {
+			ctx.font = this.width + " " + this.height;
+			ctx.fillStyle = color;
+			ctx.fillText(this.text, this.x, this.y);
+		}
+		else {
+            ctx.fillStyle = color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+    this.newPos = function() {
+        this.gravitySpeed += this.gravity;
+        this.x += this.speedX;
+        this.y += this.speedY + this.gravitySpeed;
+		
+		if (this.type == "background") {
+            if (this.x == -(this.width)) {
+                this.x = 0;
+            }
+        }
+        this.hitBottom();
+    }
+    this.hitBottom = function() {
+        var rockbottom = myGameArea.canvas.height - this.height;
+        if (this.y > rockbottom) {
+            this.y = rockbottom;
+            this.gravitySpeed = 0;
+        }
+    }
+    this.crashWith = function(otherobj) {
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + (otherobj.width);
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+            crash = false;
+        }
+        return crash;
+    }
+}
+
+function updateGameArea() {
+    var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+	
+	accelerate(0.075); 
+	if (myGameArea.key && myGameArea.key == 32){
+		accelerate(-0.2);
+	}
+	
+    for (i = 0; i < myObstacles.length; i += 1) {
+        if (myGamePiece.crashWith(myObstacles[i])) {
+			// Pajaro en caida libre -> No se como hacerlo de tal manera que no se me trabe el juego. Tendria que usar
+			//una funcion antes de que se resuelvan el myGameArea.stop y el return????
+			myMusic.stop()
+			mySound.play();
+			myGameArea.stop();
+            return;
+        } 
+    }
+	
+    myGameArea.clear();
+    myGameArea.frameNo += 1;
+	
+	myBackground.speedX = -1;
+    myBackground.newPos(); 
+    myBackground.update();
+	
+    if (myGameArea.frameNo == 1 || everyinterval(150)) {
+        x = myGameArea.canvas.width;
+        minHeight = 20;
+        maxHeight = 200;
+        height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
+        minGap = 60;
+        maxGap = 200;
+        gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
+        myObstacles.push(new component(10, height, "Obstaculo1.png", x, 0, "image"));
+        myObstacles.push(new component(10, x - height - gap, "Obstaculo1.png", x, height + gap, "image"));
+    }
+	
+    for (i = 0; i < myObstacles.length; i += 1) {
+        myObstacles[i].x += -1;
+        myObstacles[i].update();
+    }
+	
+    myScore.text="PUNTAJE: " + myGameArea.frameNo;
+    myScore.update();
+    myGamePiece.newPos();
+    myGamePiece.update();
+}
+
+function everyinterval(n) {
+    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    return false;
+}
+
+function accelerate(n) {
+    if (!myGameArea.interval) {myGameArea.interval = setInterval(updateGameArea, 20);}
+
+    myGamePiece.gravity = n;
+}
+</script>
+<br>
+<button>Instrucciones</button>
+<p>El juego es simple: Usted debe prevenir que su pajaro choque contra los canios.</p>
+<p>Para hacer esto, usted debe mantener a su pajaro en el aire con la tecla ESPACIO.</p>
+<p>Cuanto tiempo podras mantenerte con vida? Eso estara por verse..</p>
+</body>
+</html>

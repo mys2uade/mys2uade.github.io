@@ -1,0 +1,292 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+var sOfX = 7;
+var sOfY = 2;
+
+var bsX = 6;
+var bsY = 2;
+
+var Blocks = [null];
+var idBlock = 998;
+
+var Barra = null;
+
+var Ball = null;
+var idBall = 999;
+
+var idFloor = 997;
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+var gravityScale = 0;
+var gravity = new Vector2( 0, 10 * gravityScale );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+
+var SM = 30;
+var InitSpeed = new Vector2(0.3*SM,-1.1*SM);
+
+var Life = 5;
+
+var win = false;
+
+var init = false;
+
+function Update() 
+{
+
+    _world.Update(elapsed_time);
+	
+	// Reviso los contactos a ver si toca contra la bola azul
+    for(var i=0;i<_world.m_contactCount;++i)
+	{
+        var Contact = _world.contacts[i];
+		if(Contact.A.id == idBall && Contact.B.id == idBlock)
+		{
+			// Hago explotar el objeto B
+			Contact.B.deleted = true;
+		}
+		else
+		if(Contact.B.id == idBall && Contact.A.id == idBlock)
+		{
+			// Hago explotar el objeto A
+			Contact.A.deleted = true;
+		}
+		else
+		if(Contact.B.id == idBall && Contact.A.id == idFloor || Contact.A.id == idBall && Contact.B.id == idFloor)
+		{
+			if(Life > 0){
+				Life--;
+				if(Life > 0) startBall();
+			}
+		}
+	}
+	
+	win = true;
+	for(var f = 0; f < 30; f++){
+		if(Blocks[f] != null && Blocks[f].deleted == false)
+			win = false;
+	}
+	var magV = Math.sqrt(Ball.velocity.x * Ball.velocity.x + Ball.velocity.y * Ball.velocity.y)
+	magV = SM/magV;	
+	Ball.velocity.x = Ball.velocity.x * magV;
+	Ball.velocity.y = Ball.velocity.y * magV;
+	
+	
+}
+
+function Render() 
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx,ox,oy,ex,ey);
+    }
+}
+
+
+function RenderLoop() 
+{
+    if (!init)
+		return;
+    if(!win){
+		if(Life > 0){
+			Update();
+			Render();
+		} else {
+			ctx.font = "100px Arial";
+			ctx.strokeText("PERDISTE", 250, 400);
+			console.log("PERDISTE");		
+		}
+    } else {
+        ctx.font = "100px Arial";
+        ctx.strokeText("GANASTE!", 250, 400);
+        console.log("GANASTE!");
+    }
+}
+
+
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex; 
+	var yPos = (mouse_y-oy)/ ey; 
+	
+	if (e.keyCode == 37) {
+		if(Barra.position.x > 12)
+			Barra.position.x--;
+	}
+	if (e.keyCode == 39) {
+		if(Barra.position.x < 82)
+			Barra.position.x++;		
+	}
+	
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+	Barra.position.x = xPos/10;
+	
+	
+	if(xPos > 820)
+		Barra.position.x = 82;
+	if(xPos < 120)
+		Barra.position.x = 12;
+		
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function loadscene()
+{
+	// Creo un piso
+    var pI = _world.AddBox(sOfX +  0,sOfY +  30 + 1, 2, 60);
+	pI.staticFriction = 0;
+	pI.dinamicFriction = 0;
+    pI.SetStatic();
+
+    var pD = _world.AddBox(sOfX + 80,sOfY +  30 + 1, 2, 60);
+	pD.staticFriction = 0;
+	pD.dinamicFriction = 0;
+    pD.SetStatic();
+	
+    var p = _world.AddBox(sOfX + 40,sOfY +  60 + 2, 80, 2);
+	p.staticFriction = 0;
+	p.dinamicFriction = 0;
+	p.id = idFloor;
+    p.SetStatic();
+	
+    var pU = _world.AddBox(sOfX + 40,sOfY, 80, 2);
+	pU.staticFriction = 0;
+	pU.dinamicFriction = 0;
+    pU.SetStatic();
+	
+	for(var f = 0; f < 3; f++){
+		for(var i = 0; i < 10; i++){
+			var temp = _world.AddBox(i*bsX + i*1 + 15,f*bsY + f*2 + 6, bsX,bsY);
+			temp.SetStatic();
+			temp.color = getRandomColor();
+			temp.staticFriction = 0;
+			temp.dinamicFriction = 0;
+			temp.restitution = 1;
+			temp.id = idBlock;
+			Blocks.push(temp);
+		}
+	}
+	
+	Barra = _world.AddBox(50, 60, bsX*1.3,bsY*1.3);
+	Barra.staticFriction = 0;
+	Barra.dinamicFriction = 0;
+	Barra.restitution = 1;
+	Barra.SetStatic();
+
+	startBall();
+	
+    init = true;
+
+}
+
+function startBall(){	
+	if(Ball != null)
+		Ball.deleted = true;
+	Ball = _world.AddCircle(50, 55, 1);
+	Ball.velocity = InitSpeed;
+	Ball.staticFriction = 0;
+	Ball.dinamicFriction = 0;
+	Ball.restitution = 1;
+	Ball.SetInertia(0);
+	Ball.id = idBall;
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	
+	loadscene();
+	
+    setInterval(RenderLoop, elapsed_time * 1000);
+} 
+
+function getRandomColor() {
+	var letters = '0123456789ABCDEF'.split('');
+	var color = '#';
+	for (var i = 0; i < 6; i++) {
+		color += letters[Math.floor(Math.random() * 16)];
+	}
+	return color;
+}
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="1000" height="700"></canvas>
+</body>
+</html>
+ 

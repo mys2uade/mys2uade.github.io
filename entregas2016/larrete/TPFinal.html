@@ -1,0 +1,974 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engineTP/math.js"></script>
+<script type="text/javascript" src="engineTP/body.js"></script>
+<script type="text/javascript" src="engineTP/world.js"></script>
+<script type="text/javascript" src="engineTP/collision.js"></script>
+<script type="text/javascript" src="engineTP/contact.js"></script>
+<script type="text/javascript" src="engineTP/constraint.js"></script>
+<script type="text/javascript" src="engineTP/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+var click = false;
+
+var level = 0;
+var nextlevel = 0;
+var changedone = false;
+
+var transition = 0;
+var transitiontimer = 0;
+
+var gravityScale = 3;
+var gravity = new Vector2( 0, 10 * gravityScale );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+
+var init = false;
+
+var player = [];
+var pid = [];
+var u = [];
+var r = [];
+var d = [];
+var l = [];
+
+var chain = [];
+var map = [];
+var collisionWithChain = [];
+var goal = new Vector2(-100,0);
+var goal1 = new Vector2(-100,0);
+var goal2 = new Vector2(-100,0);
+var coins = [];
+var grabbedcoins = [];
+var circ;
+var circlimit;
+var circanim;
+
+var trail1 = [];
+var trail2 = [];
+var trailLength = 100;
+var trailUpdate = 0;
+var trailDistance = 10;
+
+var force = 1000;
+var speed = 20;
+
+var cant_eslabones = 15;
+var dx = 30/cant_eslabones;
+var ropewidth = 0.3;
+
+var time = 0;
+var finishingplayers = 0;
+var finishing1 = 0;
+var finishing2 = 0;
+var outofboundsplayers = 0;
+
+var transcolor = "rgba(100, 100, 200, 1)"
+
+//imágenes
+var img_instrucciones = new Image(); 
+var img_background = new Image();
+var img_title = new Image();
+
+var levelcount = 0;
+
+function loadscene()
+{
+    img_instrucciones.src = 'Instrucciones.png';
+    img_background.src = 'Fondo.png';
+    img_title.src = 'Titulo.png';
+
+	for (var j = 0; j < 2; j = j + 1) {
+		for (var i = 0; i < trailLength; i = i + 1) {
+			trail1[i] = {	x: 0 , 
+						y: 0 ,
+						time: -1
+			};
+			trail2[i] = {	x: 0 , 
+						y: 0 ,
+						time: -1
+			};
+		}
+	}
+	
+    init = false;
+    loadLevel(0);
+
+    levelcount = 10;
+}
+
+function loadLevel (id)
+{
+	circanim = -0.1;
+    init = false;
+    coins = [];
+    _world.Clear();
+    level = id;
+	goal = new Vector2(-100, 0);
+	goal1 = new Vector2(-100, 0);
+	goal2 = new Vector2(-100, 0);
+	
+	//borrar trail
+	for (var i = 0; i < trailLength; i = i + 1) {
+		trail1[i].x = -10;
+		trail2[i].x = -10;
+	}
+	
+    if (id == 0) {
+        // Creo un piso
+        var box = _world.AddBox(65, 95, 140, 80);       box.restitution = 0; box.SetStatic();
+        // pared izquierda
+        box = _world.AddBox(20, 30, 80, 80);            box.restitution = 0; box.SetStatic();
+        // pared derecha
+        box = _world.AddBox(128, 30, 1, 80);            box.restitution = 0; box.SetStatic();
+        // meta
+        goal = new Vector2(-100, 0)
+        //////////////////////////////////////Fin de la creacion del mapa
+        GatherChainColliders();
+        spawnPlayers (new Vector2(88, 55));
+        init = true;
+    }
+    if (id == 1) {
+        // Creo un piso
+        var box = _world.AddBox(65, 80, 140, 80);       box.restitution = 0; box.SetStatic();
+        // pared izquierda
+        box = _world.AddBox(-2, 30, 1, 90);             box.restitution = 0; box.SetStatic();
+        // pared derecha
+        box = _world.AddBox(128, 30, 1, 90);            box.restitution = 0; box.SetStatic();
+        // meta
+        goal = new Vector2(850, 380)
+        //////////////////////////////////////Fin de la creacion del mapa
+        GatherChainColliders();
+        spawnPlayers (new Vector2(30, 40));
+        init = true;
+    }
+    if (id == 2) {
+        // Creo un piso
+        var box = _world.AddBox(15, 80, 80, 80);        box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(20, 85, 80, 80);            box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(55, 45, 5);              box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(115, 80, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(110, 85, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(75, 45, 5);              box.restitution = 0; box.SetStatic();
+
+        // pared izquierda
+        box = _world.AddBox(-2, 30, 1, 90);             box.restitution = 0; box.SetStatic();
+        // pared derecha
+        box = _world.AddBox(128, 30, 1, 90);            box.restitution = 0; box.SetStatic();
+        // meta
+        goal = new Vector2(950, 380)
+        //////////////////////////////////////Fin de la creacion del mapa
+        GatherChainColliders();
+        spawnPlayers (new Vector2(20, 40));
+        init = true;
+    }
+    if (id == 3) {
+        // Creo un piso
+        var box = _world.AddBox(15, 80, 80, 80);        box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(20, 85, 80, 80);            box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(55, 45, 5);              	box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(115, 80, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(110, 85, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(75, 45, 5);              	box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(135, 65, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(130, 70, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(95, 30, 5);              	box.restitution = 0; box.SetStatic();
+
+        // pared izquierda
+        box = _world.AddBox(-2, 30, 1, 90);             box.restitution = 0; box.SetStatic();
+        // pared derecha
+        box = _world.AddBox(128, 30, 1, 90);            box.restitution = 0; box.SetStatic();
+        // meta
+        goal = new Vector2(1200, 240)
+        //////////////////////////////////////Fin de la creacion del mapa
+        GatherChainColliders();
+        spawnPlayers (new Vector2(20, 40));
+        init = true;
+    }
+    if (id == 4) {
+        // Creo un piso
+        var box = _world.AddBox(15, 50, 80, 80);        box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(20, 55, 80, 80);            box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(55, 15, 5);              box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(115, 22.5, 80, 25);         box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(110, 22.5, 80, 15);         box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(75, 15, 5);              box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(75, 30, 5);              box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(122.5, 85, 80, 80);         box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(112.5, 95, 80, 80);         box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(82.5, 55, 10);            box.restitution = 0; box.SetStatic();
+
+        // pared izquierda
+        box = _world.AddBox(-2, 30, 1, 90);             box.restitution = 0; box.SetStatic();
+        // pared derecha
+        box = _world.AddBox(128, 30, 1, 90);            box.restitution = 0; box.SetStatic();
+        // meta
+        goal = new Vector2(1200, 450)
+        //////////////////////////////////////Fin de la creacion del mapa
+        GatherChainColliders();
+        spawnPlayers (new Vector2(20, 10));
+        init = true;
+    }
+	if (id == 5) {
+        // Creo un piso
+        // Creo un piso
+        var box = _world.AddBox(-20, 100, 80, 80);        box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(-15, 105, 80, 80);            box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(20, 65, 5);              box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(45, 87, 20, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(45, 92, 30, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(35, 52, 5);              box.restitution = 0; box.SetStatic();
+		box = _world.AddCircle(55, 52, 5);              box.restitution = 0; box.SetStatic();
+		
+		box = _world.AddBox(80, 87-13, 20, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(80, 92-13, 30, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(70, 52-13, 5);              box.restitution = 0; box.SetStatic();
+		box = _world.AddCircle(90, 52-13, 5);              box.restitution = 0; box.SetStatic();
+		
+		box = _world.AddBox(80+30, 87-26, 10, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(80+30, 92-26, 20, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(75+30, 52-26, 5);              box.restitution = 0; box.SetStatic();
+		box = _world.AddCircle(85+30, 52-26, 5);              box.restitution = 0; box.SetStatic();
+
+        // pared izquierda
+        box = _world.AddBox(-2, 30, 1, 90);             box.restitution = 0; box.SetStatic();
+        // meta
+        goal = new Vector2(1125, 200)
+        //////////////////////////////////////Fin de la creacion del mapa
+        GatherChainColliders();
+        spawnPlayers (new Vector2(10, 59));
+        init = true;
+    }
+	if (id == 6) {
+        // Creo un piso
+        box = _world.AddBox(60, 60, 5, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(60, 65, 15, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(57.5, 25, 5);              box.restitution = 0; box.SetStatic();
+		box = _world.AddCircle(62.5, 25, 5);              box.restitution = 0; box.SetStatic();
+        // meta
+        goal1 = new Vector2(620, 200)
+		goal2 = new Vector2(500, 650)
+        //////////////////////////////////////Fin de la creacion del mapa
+        GatherChainColliders();
+        spawnPlayers (new Vector2(55, 20));
+        init = true;
+    }
+    if (id == 7) {
+
+        var box = _world.AddBox(-15, 65, 80, 80);       box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(-10, 70, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(25, 30, 5);              box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(15, 80, 80, 80);            box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(20, 85, 80, 80);            box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(55, 45, 5);              box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(115, 80, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(110, 85, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(75, 45, 5);              box.restitution = 0; box.SetStatic();
+
+        box = _world.AddBox(145, 65, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(140, 70, 80, 80);           box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(105, 30, 5);              box.restitution = 0; box.SetStatic();
+
+        // pared izquierda
+        box = _world.AddBox(-2, 30, 1, 90);             box.restitution = 0; box.SetStatic();
+        // pared derecha
+        box = _world.AddBox(128, 30, 1, 90);            box.restitution = 0; box.SetStatic();
+        // meta
+        coins[0] = new Vector2(100,250);
+        coins[1] = new Vector2(150,250);
+        coins[2] = new Vector2(200,250);
+        coins[3] = new Vector2(1120,250);
+        coins[4] = new Vector2(1170,250);
+        coins[5] = new Vector2(1220,250);
+        coins[6] = new Vector2(670,700);
+        initializeCoins();
+        //////////////////////////////////////Fin de la creacion del mapa
+        GatherChainColliders();
+        spawnPlayers (new Vector2(40, 40));
+        init = true;
+    }
+    if (id == 8) {
+
+        // Creo un piso
+        var box = _world.AddBox(10, 60, 40, 80);        box.restitution = 0; box.SetStatic();
+        box = _world.AddBox(15, 65, 40, 80);            box.restitution = 0; box.SetStatic();
+        box = _world.AddCircle(30, 25, 5);              box.restitution = 0; box.SetStatic();
+
+        GatherChainColliders(); // Todo luego de este punto no colisiona con las cadenas
+
+        box = _world.AddBox(90, 25, 80, 10);           box.restitution = 0; box.SetStatic(); box.collider_list = []; box.color = transcolor
+        box = _world.AddCircle(50, 25, 5);              box.restitution = 0; box.SetStatic(); box.collider_list = []; box.color = transcolor
+
+        // pared izquierda
+        box = _world.AddBox(-2, 30, 1, 90);             box.restitution = 0; box.SetStatic();
+        // pared derecha
+        box = _world.AddBox(128, 30, 1, 90);            box.restitution = 0; box.SetStatic();
+
+        spawnPlayers (new Vector2(5, 20.5));
+
+        // meta
+        for (var k = 0; k < 4; ++k) {
+            coins[k] = new Vector2(600+k*200, 420);
+        }
+        for (var k = 0; k < 6; ++k) {
+            coins[k+4] = new Vector2(650+k*100, 470);
+        }
+        for (var k = 0; k < 3; ++k) {
+            coins[k+10] = new Vector2(700+k*200, 520);
+        }
+        initializeCoins();
+        //////////////////////////////////////Fin de la creacion del mapa
+        
+        init = true;
+    }
+    if (id == 9) {
+
+        // Creo un piso
+        GatherChainColliders(); // Todo luego de este punto no colisiona con las cadenas
+
+        var box = _world.AddBox(62, 25, 40, 5);           box.restitution = 0; box.SetStatic(); box.collider_list = []; box.color = transcolor;
+        box = _world.AddCircle(42, 25, 2.5);              box.restitution = 0; box.SetStatic(); box.collider_list = []; box.color = transcolor;
+        box = _world.AddCircle(82, 25, 2.5);              box.restitution = 0; box.SetStatic(); box.collider_list = []; box.color = transcolor;
+
+        spawnPlayers (new Vector2(57.5, 21.5));
+
+        // meta
+        for (var k = 0; k < 11; ++k) {
+            coins[k] = new Vector2(650+Math.cos(k*Math.PI/10)*300, 420+Math.sin(k*Math.PI/10)*150);
+        }
+        initializeCoins();
+        //////////////////////////////////////Fin de la creacion del mapa
+        
+        init = true;
+    }
+    if (id == 10) {
+
+    	circ = _world.AddCircle(62, 10, 4);           circ.restitution = 0; circ.color = "rgba(200,100,100,1)"; circ.SetMass(10000); circ.SetStatic();
+
+        // Creo un piso
+        GatherChainColliders(); // Todo luego de este punto no colisiona con las cadenas
+
+		circlimit = _world.AddBox(42, 25, 0.5, 4);    circlimit.restitution = 0; circlimit.SetStatic(); circlimit.collider_list = []; circlimit.color = transcolor;
+
+        spawnPlayers (new Vector2(57.5, 15));
+
+
+        // meta
+        for (var k = 0; k < 11; ++k) {
+            coins[k] = new Vector2(650+Math.cos(k*Math.PI/10)*250, 420+Math.sin(k*Math.PI/10)*170);
+        }
+        for (var k = 11; k < 20; ++k) {
+            coins[k] = new Vector2(650+Math.cos(k*Math.PI/10)*180, 420+Math.sin(k*Math.PI/10)*180);
+        }
+        initializeCoins();
+        //////////////////////////////////////Fin de la creacion del mapa
+        
+        init = true;
+    }
+}
+
+function Update()
+{
+	if (level == 10) {
+	circanim = circanim + elapsed_time/5;
+	circ.position = new Vector2(Math.sin(circanim)*20+62.5, -Math.cos(circanim)*20+35);
+	circlimit.position = new Vector2(Math.sin(circanim)*20+62.5, -Math.cos(circanim)*20+28);
+	}
+    time = time + elapsed_time;
+
+    if (transition != 0) {
+        transitiontimer = transitiontimer + elapsed_time;
+    }
+    if (transitiontimer > 1) {
+        transition = 0;
+        transitiontimer = 0;
+    }
+    if (!changedone) {
+        if (transitiontimer > 0.5) {
+            changedone = true;
+            loadLevel(nextlevel);
+        }
+    }
+
+    _world.Update(elapsed_time);
+
+    outofboundsplayers = 0;
+    for (var j = 0; j < 2; j++) {
+        if (player[j].position.x > 135 || player[j].position.x < -5 || player[j].position.y > 85) {
+            outofboundsplayers = outofboundsplayers + 1;
+        }
+    }
+    if (outofboundsplayers == 2) {
+        gotoLevel(level);
+    }
+
+    finishingplayers = 0;
+	finishing1 = 0;
+	finishing2 = 0;
+    for (var j = 0; j < 2; j++) {
+        var grounded = false;
+        for (var i = 0; i < _world.m_contactCount; i++) {
+            if (_world.contacts[i].A.id == pid[j]) {
+                grounded = true;  
+                if (u[j]) {
+                    player[j].ApplyForce(_world.contacts[i].normal.multiply(-1000))
+                }           
+            }
+        }
+
+        // Meta
+        var ppos = player[j].position;
+        var a = (ppos.x*ex+ox-goal.x);
+        var b = (ppos.y*ex+oy-goal.y);
+        if (a*a+b*b < 2000) {
+            finishingplayers = finishingplayers + 1;
+        }
+		a = (ppos.x*ex+ox-goal1.x);
+        b = (ppos.y*ex+oy-goal1.y);
+        if (a*a+b*b < 2000) {
+            finishing1 = finishing1 + 1;
+        }
+		a = (ppos.x*ex+ox-goal2.x);
+        b = (ppos.y*ex+oy-goal2.y);
+		if (a*a+b*b < 2000) {
+            finishing2 = finishing2 + 1;
+        }
+        // Coins
+        if (coins.length > 0) {
+            var win = true;
+            for (var i = 0; i < coins.length; ++i) {
+                a = (ppos.x*ex+ox-coins[i].x);
+                b = (ppos.y*ex+oy-coins[i].y);
+                if (a*a+b*b < 1000) {
+                    grabbedcoins[i] = true;
+                }
+                if (!grabbedcoins[i]) {
+                    win = false;
+                }
+            }
+        } else {
+            win = false;
+        }
+
+
+
+        var forcemul = 1;
+        if (!grounded) {
+            forcemul = 0.1;
+        }
+        if (r[j])
+            if (player[j].velocity.x < speed)
+                player[j].ApplyForce(new Vector2(force*forcemul, 0));
+        if (l[j])
+            if (player[j].velocity.x > -speed)
+                player[j].ApplyForce(new Vector2(-force*forcemul, 0));
+
+        if (grounded) {
+            player[j].ApplyForce(new Vector2(-player[j].velocity.x*player[j].mass*10, 0));
+        } else {
+            player[j].ApplyForce(new Vector2(-player[j].velocity.x*player[j].mass*0.05, 0));
+        }
+		
+		// siguiente trail
+		trailUpdate = trailUpdate + 1;
+		if (trailUpdate >= trailLength) {
+			trailUpdate = 0;
+		}
+		if (trailUpdate%trailDistance == 0) {
+			trail1[trailUpdate].x = player[0].position.x;
+			trail1[trailUpdate].y = player[0].position.y;
+			trail2[trailUpdate].x = player[1].position.x;
+			trail2[trailUpdate].y = player[1].position.y;
+			trail1[trailUpdate].time = 0;
+			trail2[trailUpdate].time = 0;
+		}
+    }
+    if (finishingplayers > 1 || (finishing1 > 0 && finishing2 > 0) || win) {
+        win = false;
+        if (level < levelcount) {
+            gotoLevel(level+1);
+        } else {
+            gotoLevel(0);
+        }
+    }
+}
+
+function Render() 
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        //ctx.fillStyle = 'rgba(70,70,80,1)';
+        //ctx.fillRect(0,0,2000,2000);
+        ctx.drawImage(img_background,0,0);
+
+        // Aro nivel 10
+	    if (level == 10) {
+            ctx.strokeStyle = "rgba(80,80,80,1)";
+            ctx.beginPath();
+            ctx.arc(625+ox,350+oy,200,0,2*Math.PI);
+            ctx.lineWidth = 70;
+            ctx.stroke();
+            ctx.strokeStyle = "rgba(30,30,30,1)";
+            ctx.beginPath();
+            ctx.arc(625+ox,350+oy,200,0,2*Math.PI);
+            ctx.lineWidth = 40;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+	    }
+
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx,ox,oy,ex,ey);
+
+        // Meta
+		for (var i = 0; i < 3; i = i + 1) {
+			var draw = true;
+			var posx;
+			var posy;
+			if (i == 0 && goal.x != -100) {drawGoal(goal, 1);}
+			if (i == 1 && goal1.x != -100) {drawGoal(goal1, 2);}
+			if (i == 2 && goal2.x != -100) {drawGoal(goal2, 3);}
+		}
+        // Coins
+        for (var i = 0; i < coins.length; ++i) {
+            if (!grabbedcoins[i]) {
+                ctx.fillStyle = "rgba(255,255,20,1)";
+                ctx.strokeStyle = "rgba(250,100,0,1)";
+                ctx.shadowBlur=10;
+                ctx.shadowColor="rgba(255,255,20,1)";
+                ctx.beginPath();
+                ctx.arc(coins[i].x,coins[i].y,10+2*Math.sin(time*6),0,2*Math.PI);
+                ctx.fill();
+                ctx.lineWidth = 5;
+                ctx.stroke();
+                ctx.lineWidth = 1;
+                ctx.shadowBlur=0;
+            }
+        }
+
+        // Soga
+        ctx.lineWidth = 35*ropewidth+4;
+        ctx.lineJoin="round";
+        ctx.beginPath();
+        ctx.moveTo((player[0].position.x+2)*ex, (player[0].position.y+2)*ex);
+        for(var j= 0;j<cant_eslabones;++j) {
+            ctx.lineTo((chain[j].position.x+2)*ex, (chain[j].position.y+2)*ex);
+        }
+        ctx.lineTo((player[1].position.x+2)*ex, (player[1].position.y+2)*ex);
+        ctx.strokeStyle = "black";
+        ctx.stroke();
+
+        ctx.lineWidth = 20*ropewidth;
+        ctx.beginPath();
+        ctx.moveTo((player[0].position.x+2)*ex, (player[0].position.y+2)*ex);
+        for(var j= 0;j<cant_eslabones;++j) {
+            ctx.lineTo((chain[j].position.x+2)*ex, (chain[j].position.y+2)*ex);
+        }
+        ctx.lineTo((player[1].position.x+2)*ex, (player[1].position.y+2)*ex);
+        ctx.strokeStyle = "rgba(255,100,20,1)";
+        ctx.stroke();
+
+        ctx.lineWidth = 10*ropewidth;
+        ctx.beginPath();
+        ctx.moveTo((player[0].position.x+2)*ex, (player[0].position.y+2)*ex-5*ropewidth);
+        for(var j= 0;j<cant_eslabones;++j) {
+            ctx.lineTo((chain[j].position.x+2)*ex, (chain[j].position.y+2)*ex-5*ropewidth);
+        }
+        ctx.lineTo((player[1].position.x+2)*ex, (player[1].position.y+2)*ex-5*ropewidth);
+        ctx.strokeStyle = "rgba(255,180,0,1)";
+        ctx.stroke();
+        ctx.lineWidth = 1;
+
+		//trails
+		for (var i = 0; i < trailLength; i = i + 1) {
+				
+				var alpha = (0.5-trail1[i].time/trailLength).toString()
+				ctx.fillStyle = "rgba(255,255,255,"+alpha+")";
+				
+				ctx.beginPath();
+				ctx.arc(trail1[i].x*ex+ox,trail1[i].y*ex+oy,4,0,2*Math.PI);
+				ctx.fill();
+
+				ctx.fillStyle = "rgba(255,255,255,"+alpha+")";
+				
+				ctx.beginPath();
+				ctx.arc(trail2[i].x*ex+ox,trail2[i].y*ex+oy,4,0,2*Math.PI);
+				ctx.fill();
+				
+				trail1[i].time = trail1[i].time+1;
+				trail2[i].time = trail2[i].time+1;
+		}
+		
+        // Jugadores
+        for(var j= 0;j<2;++j) {
+            if (j == 0) {
+                ctx.fillStyle = "rgba(255,60,20,1)";
+            } else {
+                ctx.fillStyle = "rgba(50,100,255,1)";
+            }
+            ctx.strokeStyle = "rgba(0,0,0,1)";
+            ctx.beginPath();
+            ctx.arc(player[j].position.x*ex+ox,player[j].position.y*ex+oy,12,0,2*Math.PI);
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.lineWidth = 1;
+			/*
+            ctx.lineWidth = 50*ropewidth;
+	        ctx.lineJoin="round";
+	        ctx.beginPath();
+	        ctx.moveTo((player[j].position.x)*ex+ox-10, (player[j].position.y)*ex+oy+2);
+	        ctx.lineTo((player[j].position.x)*ex+ox+10, (player[j].position.y)*ex+oy+2);
+	        ctx.lineTo((player[j].position.x)*ex+ox-10, (player[j].position.y)*ex+oy+2);
+	        ctx.lineTo((player[j].position.x)*ex+ox+10, (player[j].position.y)*ex+oy+2);
+	        ctx.strokeStyle = "black";
+	        ctx.stroke();
+
+	        ctx.lineWidth = 25*ropewidth;
+	        ctx.lineJoin="round";
+	        ctx.beginPath();
+	        ctx.moveTo((player[j].position.x)*ex+ox-10, (player[j].position.y)*ex+oy+2);
+	        ctx.lineTo((player[j].position.x)*ex+ox+10, (player[j].position.y)*ex+oy+2);
+	        ctx.lineTo((player[j].position.x)*ex+ox-10, (player[j].position.y)*ex+oy+2);
+	        ctx.lineTo((player[j].position.x)*ex+ox+10, (player[j].position.y)*ex+oy+2);
+	        ctx.strokeStyle = "rgba(255,100,20,1)";
+	        ctx.stroke();
+
+	        ctx.lineWidth = 15*ropewidth;
+	        ctx.lineJoin="round";
+	        ctx.beginPath();
+	        ctx.moveTo((player[j].position.x)*ex+ox-10, (player[j].position.y)*ex+oy);
+	        ctx.lineTo((player[j].position.x)*ex+ox+10, (player[j].position.y)*ex+oy);
+	        ctx.lineTo((player[j].position.x)*ex+ox-10, (player[j].position.y)*ex+oy);
+	        ctx.lineTo((player[j].position.x)*ex+ox+10, (player[j].position.y)*ex+oy);
+	        ctx.strokeStyle = "rgba(255,180,0,1)";
+	        ctx.stroke();
+
+	        ctx.lineWidth = 1;*/
+        }
+	
+		trail1[trailUpdate].time = 0
+		trail2[trailUpdate].time = 0
+
+        // Botones
+
+        var bwidth = 360;
+        var bheight = 45;
+        var bx = 100;
+        var by = 70;
+
+        if (level != 0) {
+            if (Button(20, 100, 20, bheight, "Menú")) {gotoLevel(0);}
+        }
+        if (level == 0) {
+            for (var i = 1; i <= levelcount; i = i + 1) {
+                if (Button(bx, bwidth, by+bheight*1.5*(i-1), bheight, "Nivel "+i)) {gotoLevel(i);}
+            }
+            ctx.drawImage(img_instrucciones,665,100);
+            ctx.drawImage(img_title,665,590);
+        }
+
+        // Transición
+        if (transition != 0) {
+            ctx.fillStyle = "rgba(255,255,255,1)";
+            ctx.fillRect(-1300*2+1300*4*transitiontimer,0,1300*2,800);
+        }
+    }
+}
+
+
+function RenderLoop() 
+{
+    if (!init)
+		return;
+    
+	Update();
+	Render();
+}
+
+
+function doKeyDown(e) 
+{
+	//var xPos = (mouse_x-ox)/ ex; 
+	//var yPos = (mouse_y-oy)/ ey;
+    if (e.keyCode == 65) {
+        l[0] = true;
+    }
+    if (e.keyCode == 68) {
+        r[0] = true;
+    }
+    if (e.keyCode == 87) {
+        u[0] = true;
+    }
+    if (e.keyCode == 83) {
+        d[0] = true;
+    }
+
+    if (e.keyCode == 100) {
+        l[1] = true;
+    }
+    if (e.keyCode == 102) {
+        r[1] = true;
+    }
+    if (e.keyCode == 104) {
+        u[1] = true;
+    }
+    if (e.keyCode == 101) {
+        d[1] = true;
+    }
+}
+
+function doKeyUp(e) 
+{
+    //var xPos = (mouse_x-ox)/ ex; 
+    //var yPos = (mouse_y-oy)/ ey;
+    if (e.keyCode == 65) {
+        l[0] = false;
+    }
+    if (e.keyCode == 68) {
+        r[0] = false;
+    }
+    if (e.keyCode == 87) {
+        u[0] = false;
+    }
+    if (e.keyCode == 83) {
+        d[0] = false;
+    }
+
+    if (e.keyCode == 100) {
+        l[1] = false;
+    }
+    if (e.keyCode == 102) {
+        r[1] = false;
+    }
+    if (e.keyCode == 104) {
+        u[1] = false;
+    }
+    if (e.keyCode == 101) {
+        d[1] = false;
+    }
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+            click = true;
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            click = false;
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function gotoLevel (id) {
+    if (transition == 0) {
+        nextlevel = id;
+        transition = 1;
+        changedone = false;
+    }
+}
+
+function initializeCoins() {
+    grabbedcoins = [];
+    for (var i = 0; i < coins.length; ++i) {
+        grabbedcoins[i] = false;
+    }
+}
+
+function GatherChainColliders () {
+    collisionWithChain = [];
+    for(var i=0;i<_world.m_bodyCount;++i)
+    {
+        collisionWithChain[i] = _world.bodies[i];
+    }
+}
+
+function spawnPlayers (pos) {
+    map = [];
+    for(var i=0;i<_world.m_bodyCount;++i)
+    {
+        map[i] = _world.bodies[i];
+    }
+
+    for (var i = 0; i < 2; i++) {
+        player[i] = _world.AddCircle(pos.x+10*i,pos.y,1);
+        player[i].staticFriction = 0;
+        player[i].dynamicFriction = 0;
+        player[i].restitution = 0;
+        player[i].SetMass(5);
+        u[i] = false;
+        r[i] = false;
+        d[i] = false;
+        l[i] = false;
+        pid[i] = player[i].id;
+    }
+
+    player[0].collider_list = map;
+    player[1].collider_list = map;
+
+    var p = player[0]
+    //var last = null;
+    for(var j= 0;j<cant_eslabones;++j)
+    {
+       var A = _world.AddCircle(j*dx*0.3+0.6+pos.x,pos.y,ropewidth);
+       A.staticFriction = 0;
+       A.dynamicFriction = 0;
+       A.restitution = 0;
+       A.SetMass(300);
+       A.visible = false;
+       chain[j] = A;
+       var mul;
+       if (j == 0) {mul = 1.2} else {mul = 0.3}
+        var C = _world.AddConstraint(p,A,dx*mul);
+        //if (last != null)
+        //C = _world.AddConstraint(last,A,dx*mul*2.1);
+        //C.joint = true;
+        //last = p;
+        p = A;
+    }
+    var B = player[1]
+    _world.AddConstraint(p,B,dx*1.1);
+
+    for(var j= 0;j<cant_eslabones;++j)
+    {
+        chain[j].collider_list = collisionWithChain;
+    }
+}
+
+function Button(left, width, top, height, text) {
+
+    var hover = false;
+
+    if (mouse_y < top+height && mouse_y > top && mouse_x > left && mouse_x < left+width) {
+        hover = true;
+        var c = click;
+        click = false;
+    }
+
+    if (hover) { left = left + 10; }
+
+    ctx.fillStyle = 'black';
+    ctx.fillRect(left-5,top-5,width+10,height+10);
+
+    if (hover) {
+        ctx.fillStyle = 'rgba(230,230,230,255)';
+    } else {
+        ctx.fillStyle = 'rgba(150,150,150,255)';
+    }
+
+    ctx.fillRect(left,top,width,height);
+    
+    if (height >= 30) {
+        ctx.font="30px Verdana";
+    } else {
+        ctx.font="20px Verdana";
+    }
+    ctx.fillStyle ='rgba(10,10,10,255)';
+    ctx.fillText(text,left+5,top+height-10);
+
+    return c;
+}
+
+function drawGoal (pos, p) {
+	ctx.fillStyle = "rgba(255,255,20,1)";
+	ctx.strokeStyle = "rgba(250,100,0,1)";
+	ctx.shadowBlur=20;
+	ctx.shadowColor="rgba(255,255,20,1)";
+	ctx.beginPath();
+	ctx.arc(pos.x,pos.y,30+5*Math.sin(time*4),0,2*Math.PI);
+	ctx.fill();
+	ctx.lineWidth = 10;
+	ctx.stroke();
+	ctx.lineWidth = 1;
+	ctx.font="30px Verdana";
+	ctx.fillStyle ='rgba(0,0,0,255)';
+	ctx.shadowBlur=0;
+	if (p == 1) {
+		ctx.fillText(finishingplayers+"/2",pos.x-25,pos.y+10);
+	}
+	if (p == 2) {
+		ctx.fillText(finishing1+"/1",pos.x-25,pos.y+10);
+	}
+	if (p == 3) {
+		ctx.fillText(finishing2+"/1",pos.x-25,pos.y+10);
+	}
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+    document.addEventListener( "keyup", doKeyUp, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	
+	loadscene();
+	
+    setInterval(RenderLoop, elapsed_time * 1000);
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="1300" height="800"></canvas>
+</body>
+</html>
+ 

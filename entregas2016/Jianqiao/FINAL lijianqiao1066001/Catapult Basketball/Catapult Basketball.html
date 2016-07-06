@@ -1,0 +1,810 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var timer = 0;
+var timer1 = 2;
+var timer2 = 0;
+var timer3 = 0;
+var timer4 = 0;
+var timer5 = 0;
+
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+// pos y tamaño de pantalla
+var OX = 1;
+var OY = 1;
+var DX = 90;
+var DY = 60;
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+var gravityScale = 5.0;
+var gravity = new Vector2( 0,0 );
+
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+var init = false;
+var status = 0;
+var canion = null;
+var ball = null;
+var piso=null;
+var power = 150;
+var punto1 = 0;
+var punto2 = 0;
+var punto3 = 0;
+var punto4 = 0;
+var puntototal = 0;
+var ID_bola=999;
+var ID_floor = 998;
+var pos_hoyo= new Vector2(82,38.5);
+var pos_hoyo2= new Vector2(72,38.5);
+var pos_hoyo3= new Vector2(62,38.5);
+var pos_hoyo4= new Vector2(3,28.5);
+var cant_bolas=0;
+var q;
+var q1;
+var q2;
+var qa=null;
+var qb=null;
+var i=0;
+var paused = false;
+var paused0 = false;
+var paused_start = false;
+var paused_end = false;
+var paused_lose = false;
+var control1=false;
+var control2=false;
+var control3=false;
+var control4=false;
+
+var number=0;
+
+var vel_velocidadq = 30;
+var vel_velocidadq1 = 20;
+var vel_velocidadq2 = 10;
+var vel_velocidad1 = 35;
+var vel_velocidad2 = 15;
+
+var img_basketball = new Image();
+var img_background = new Image();
+var img_background1 = new Image();
+var img_background_start = new Image();
+var img_background_end = new Image();
+var img_background_lose = new Image();
+
+var img_wallA = new Image();
+var img_wallB = new Image();
+var img_wallC = new Image();
+var img_wallD = new Image();
+var img_wall0 = new Image();
+
+var img_mas10 = new Image();
+var img_mas5 = new Image();
+var img_mas1 = new Image();
+var img_menos10 = new Image();
+
+var img_wall00_yellow = new Image();
+var img_wall00_green = new Image();
+var img_wall00_red = new Image();
+var img_wall01_blue = new Image();
+
+var img_flechaUP = new Image();
+var img_flechaDOWN = new Image();
+var img_flechaLEFT = new Image();
+var img_flechaRIGHT = new Image();
+var img_space = new Image();
+var img_keyboard = new Image();
+var img_mouse = new Image();
+
+var img_bowser = new Image();
+var img_guidao = new Image();
+
+var img_flecha = new Image();
+var img_heidong = new Image();
+
+function Update()  
+{
+    _world.Update(elapsed_time);
+	for(var i=0;i<_world.m_bodyCount;i++)
+	{
+	    var p=_world.bodies[i];
+		
+	    if(p.id==ID_bola)
+	    {
+	        var salio=false;
+			if(vec2_substract(pos_hoyo4,p.position).length()<1)
+	        {
+                p.position.Set(1+3*cant_bolas,0);
+		        p.SetStatic();
+		        salio = true;
+		        cant_bolas++;
+				punto4+=10;
+				control4=true;
+			}
+	        if(vec2_substract(pos_hoyo,p.position).length()<1)
+	        {
+                p.position.Set(1+3*cant_bolas,0);
+		        p.SetStatic();
+		        salio = true;
+		        cant_bolas++;
+				punto3+=10;
+				control1=true;
+	        }
+			if(vec2_substract(pos_hoyo2,p.position).length()<1)
+	        {
+                p.position.Set(1+3*cant_bolas,0);
+		        p.SetStatic();
+		        salio = true;
+		        cant_bolas++;
+				punto2+=5;
+				control2=true;
+	        }
+			if(vec2_substract(pos_hoyo3,p.position).length()<1)
+	        {
+                p.position.Set(1+3*cant_bolas,0);
+		        p.SetStatic();
+		        salio = true;
+		        cant_bolas++;
+				punto1+=1;
+				control3=true;
+	        }
+	    }
+	}
+	
+	for(var i=0;i<_world.m_contactCount;i++)
+	{
+        var Conecta=_world.contacts[i];
+		if(Conecta.A.id==ID_floor&&Conecta.B.id==ID_bola)
+		{
+		    Conecta.B.deleted=true;
+		}
+		else
+		if(Conecta.A.id==ID_bola&&Conecta.B.id==ID_floor)
+		{
+		    Conecta.A.deleted=true;
+		}
+	}
+	puntototal=punto1+punto2+punto3-punto4;
+	if(timer2>0)
+	{
+	    timer2 -= elapsed_time;
+		if(timer2 <= 0)
+		{
+		    timer2 = 0;
+			control1=false;
+		}
+	}
+	if(control1){
+	    return;
+	}
+	if(number=1){
+	    timer2=0.5;
+		number=0;
+	}
+	if(timer3>0)
+	{
+	    timer3 -= elapsed_time;
+		if(timer3 <= 0)
+		{
+		    timer3 = 0;
+			control2=false;
+		}
+	}
+	if(control2){
+	    return;
+	}
+	if(number=2){
+	    timer3=0.5;
+		number=0;
+	}
+	if(timer4>0)
+	{
+	    timer4 -= elapsed_time;
+		if(timer4 <= 0)
+		{
+		    timer4 = 0;
+			control3=false;
+		}
+	}
+	if(control3){
+	    return;
+	}
+	if(number=3){
+	    timer4=0.5;
+		number=0;
+	}
+	if(timer5>0)
+	{
+	    timer5 -= elapsed_time;
+		if(timer5 <= 0)
+		{
+		    timer5 = 0;
+			control4=false;
+		}
+	}
+	if(control4){
+	    return;
+	}
+	if(number=4){
+	    timer5=0.5;
+		number=0;
+	}
+	if(timer>0)
+	{
+	    timer -= elapsed_time;
+		if(timer <= 0)
+		{
+		    timer = 0;
+			paused = false;
+		}
+	}
+	
+}
+
+function Render()
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		
+		ctx.drawImage(img_background,0,0,1000,1000);
+		
+		
+		if(paused==true){
+		//ctx.drawImage(img_background1,0,0,1000,600);
+		ctx.fillStyle = 'rgba(255,0,0,255)';
+		ctx.font = "60px Arial";
+		ctx.fillText ("!!!level UP!!!",100,370);
+		}
+		if(control1==true){
+		    ctx.drawImage(img_mas10,813,325,95,95);
+			number=1;
+		}
+		if(control2==true){
+		    ctx.drawImage(img_mas5,713,325,95,95);
+			number=2;
+		}
+		if(control3==true){
+		    ctx.drawImage(img_mas1,613,325,95,95);
+			number=3;
+		}
+		if(control4==true){
+		    ctx.drawImage(img_menos10,13,225,95,95);
+			number=4;
+		}
+		
+		ctx.drawImage(img_wall00_yellow,613,345,65,85);
+		ctx.drawImage(img_wall00_green,713,345,65,85);
+		ctx.drawImage(img_wall00_red,813,345,65,85);
+		ctx.drawImage(img_wall01_blue,13,245,65,85);
+		
+		ctx.drawImage(img_keyboard,105,515,80,80);
+		ctx.drawImage(img_mouse,105,545,80,80);
+		
+		ctx.drawImage(img_flechaUP,195,540,20,20);
+		ctx.drawImage(img_flechaDOWN,260,540,20,20);
+		ctx.drawImage(img_flechaLEFT,355,540,20,20);
+		ctx.drawImage(img_flechaRIGHT,525,540,20,20);
+		ctx.drawImage(img_space,645,540,120,20);
+		
+		ctx.drawImage(img_guidao,395,55,50,370);
+		
+		ctx.fillStyle = 'rgba(0,0,255,255)';
+		ctx.font = "20px Arial";
+		ctx.fillText ("control con",5,560);
+		ctx.fillStyle = 'rgba(0,0,255,255)';
+		ctx.font = "20px Arial";
+		ctx.fillText (":",190,560);
+		ctx.fillStyle = 'rgba(0,0,255,255)';
+		ctx.font = "15px Arial";
+		ctx.fillText (":UP",220,560);
+		ctx.fillStyle = 'rgba(0,0,255,255)';
+		ctx.font = "15px Arial";
+		ctx.fillText (":DOWN",280,560);
+		ctx.fillStyle = 'rgba(0,0,255,255)';
+		ctx.font = "15px Arial";
+		ctx.fillText (":POWER DOWN",380,560);
+		ctx.fillStyle = 'rgba(0,0,255,255)';
+		ctx.font = "15px Arial";
+		ctx.fillText (":POWER UP",550,560);
+		ctx.fillStyle = 'rgba(0,0,255,255)';
+		ctx.font = "15px Arial";
+		ctx.fillText (":LANZAMIENTO",780,560);
+		
+		ctx.fillStyle = 'rgba(255,0,0,255)';
+		ctx.font = "20px Arial";
+		ctx.fillText ("o control con            :  direccion y fuerza, click izquierda es lanzamiento",5,590);
+
+		
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial";
+		ctx.fillText ("power= "+Math.floor(power),8,45);
+		
+		ctx.fillStyle = 'rgba(255,255,0,255)';
+		ctx.font = "20px Arial";
+		ctx.fillText ("punto1(*1)= "+punto1,150,45);
+		
+		ctx.fillStyle = 'rgba(0,255,0,255)';
+		ctx.font = "20px Arial";
+		ctx.fillText ("punto2(*5)= "+punto2,300,45);
+		
+		ctx.fillStyle = 'rgba(255,0,0,255)';
+		ctx.font = "20px Arial";
+		ctx.fillText ("punto3(*10)= "+punto3,450,45);
+		
+		ctx.fillStyle = 'rgba(255,0,255,255)';
+		ctx.font = "20px Arial";
+		ctx.fillText ("puntototal= "+puntototal,610,45);
+		
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx);
+		
+		/*ctx.fillStyle='rgb(0,0,0)';
+		ctx.beginPath();
+		ctx.arc(ox+pos_hoyo4.x*ex,oy+pos_hoyo4.y*ey,1*ex,0,Math.PI*2,true);
+		ctx.closePath();
+		ctx.fill();
+		
+		ctx.fillStyle='rgb(255,0,0)';
+		ctx.beginPath();
+		ctx.arc(ox+pos_hoyo.x*ex,oy+pos_hoyo.y*ey,1*ex,0,Math.PI*2,true);
+		ctx.closePath();
+		ctx.fill();
+		
+		ctx.fillStyle='rgb(0,255,0)';
+		ctx.beginPath();
+		ctx.arc(ox+pos_hoyo2.x*ex,oy+pos_hoyo2.y*ey,1*ex,0,Math.PI*2,true);
+		ctx.closePath();
+		ctx.fill();
+		
+		ctx.fillStyle='rgb(255,255,0)';
+		ctx.beginPath();
+		ctx.arc(ox+pos_hoyo3.x*ex,oy+pos_hoyo3.y*ey,1*ex,0,Math.PI*2,true);
+		ctx.closePath();
+		ctx.fill();*/
+
+		if(paused_start==false)
+		{
+	        ctx.drawImage(img_background_start,0,0,900,600);
+			return;
+        } 
+		if(paused_end==true)
+		{
+		    ctx.drawImage(img_background_end,0,0,900,600);
+			return;	
+		}
+		if(paused_lose==true)
+		{
+		    ctx.drawImage(img_background_lose,0,0,1000,600);
+			return;
+		}  		
+	}
+}
+
+function RenderLoop() 
+{
+    if(timer1>0)
+	{
+		timer1 -= elapsed_time;
+		if(timer1 <= 0)
+		{
+			timer1 =2;
+		}
+	}
+
+	if(puntototal>=80){
+		paused_end=true;
+		}
+		
+	if(puntototal<=-1){
+		paused_lose=true;
+		}
+	
+	
+	
+    if (!init)
+		return;
+		
+	    if(puntototal>=30){
+		if(i==2){
+		paused = true;
+        timer = 1;
+		i++;
+		}
+		q.position.x = q.position.x + vel_velocidadq*(elapsed_time);
+		if(q.position.x>=83)
+		{
+			vel_velocidadq = -vel_velocidadq;
+		}
+		if(q.position.x<=55)
+		{
+			vel_velocidadq = -vel_velocidadq;
+		}
+		}
+		if(puntototal>=20){
+		if(i==1){
+		paused = true;
+        timer = 1;
+		i++;
+		}
+		q1.position.x = q1.position.x + vel_velocidadq1*(elapsed_time);
+		if(q1.position.x>=83)
+		{
+			vel_velocidadq1 = -vel_velocidadq1;
+		}
+		if(q1.position.x<=55)
+		{
+			vel_velocidadq1 = -vel_velocidadq1;
+		}
+		}
+		if(puntototal>=10){
+		if(i==0){
+		paused = true;
+        timer = 1;
+		i++;
+		}
+		q2.position.x = q2.position.x + vel_velocidadq2*(elapsed_time);
+		if(q2.position.x>=83)
+		{
+			vel_velocidadq2 = -vel_velocidadq2;
+		}
+		if(q2.position.x<=55)
+		{
+			vel_velocidadq2 = -vel_velocidadq2;
+		}
+		}
+		
+		if(puntototal>=40){
+		if(i==3){
+		paused = true;
+        timer = 1;
+		i++;
+		}
+		qa.position.y = qa.position.y + vel_velocidad1*(elapsed_time);
+		if(qa.position.y>=48)
+		{
+		    vel_velocidad1 = -vel_velocidad1;
+		}
+		if(qa.position.y<=7)
+		{
+		    vel_velocidad1 = -vel_velocidad1;
+		}
+		}
+		
+		if(paused_start==true){
+		qb.position.y = qb.position.y + vel_velocidad2*(elapsed_time);
+		if(qb.position.y>=38)
+		{
+		    vel_velocidad2 = -vel_velocidad2;
+		}
+		if(qb.position.y<=7)
+		{
+		    vel_velocidad2 = -vel_velocidad2;
+		}
+		if(timer1==2){
+	    ball = _world.AddCircle(OX+DX/2,OY+DY/2,1);
+	    ball.id=ID_bola;
+	    ball.img = img_basketball;
+	    ball.position.x = qb.position.x - Math.cos(q.orient)*10;
+	    ball.position.y = qb.position.y - Math.sin(q.orient)*10;
+	 
+		gravity.y = 40;
+		ball.visible = true;
+	    var pow=Math.random(1,2)*40;
+	    ball.velocity.x = -Math.cos(q.orient)* pow;
+	    ball.velocity.y = -Math.sin(q.orient)* pow;
+	    }
+		}
+	    
+	Update();
+	Render();
+}
+
+
+function doKeyDown(e) 
+{
+    e = e || window.event;
+	var xPos = (mouse_x-ox)/ ex; 
+	var yPos = (mouse_y-oy)/ ey;
+	if(e.keyCode==65)
+	{
+	    paused_start=true;
+	}
+	else
+	if(e.keyCode==32)
+	{
+	if(paused_start==true){
+		ball = _world.AddCircle(OX+DX/2,OY+DY/2,1);
+		ball.id=ID_bola;
+		ball.img = img_basketball;
+		//status = 1;
+		gravity.y = 40;
+
+		ball.position.x = canion.position.x + Math.cos(canion.orient)*10;
+		ball.position.y = canion.position.y + Math.sin(canion.orient)*10;
+		ball.visible = true;
+	
+
+		var p=power/100*30
+		ball.velocity.x = Math.cos(canion.orient)* p;
+		ball.velocity.y = Math.sin(canion.orient)* p;
+		}
+
+	
+		
+	}
+	else
+	if(e.keyCode==40)
+	{
+		canion.SetOrient( canion.orient + 0.05);
+		if(canion.orient>0){
+	canion.orient=0;
+	}
+	}
+	else
+	if(e.keyCode==38)
+	{
+		canion.SetOrient( canion.orient - 0.05);
+		if(canion.orient<-Math.PI/2){
+	canion.orient=-Math.PI/2;
+	}
+	}
+	else
+	if(e.keyCode==37)
+	{
+	    power-=5;
+		if(power<=70)
+		{
+		    power=70;
+		}
+		
+	}
+	else
+	if(e.keyCode==39)
+	{
+	 power+=5;
+		if(power>=230)
+		{
+		    power=230;
+		}
+	}
+	
+}
+
+function onMouseMove() 
+{
+
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+	
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+	var angle = Math.atan2(mouse_x-DX+OX+5,DY*7-mouse_y+OY+DY+30)-Math.PI/2;
+	if(angle>0){
+	angle=0;
+	}
+	if(angle<-Math.PI/2){
+	angle=-Math.PI/2;
+	}
+	canion.SetOrient(angle);
+	
+	power=(Math.atan2(mouse_x,mouse_y))*100+80;
+	if(power<150){
+	power=150;
+	}
+	else
+	if(power>210){
+	power=210;
+	}
+}
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+		if(paused_start==true){
+		ball = _world.AddCircle(OX+DX/2,OY+DY/2,1);
+		ball.id=ID_bola;
+		ball.img = img_basketball;
+		//status = 1;
+		gravity.y = 40;
+
+		ball.position.x = canion.position.x + Math.cos(canion.orient)*10;
+		ball.position.y = canion.position.y + Math.sin(canion.orient)*10;
+		ball.visible = true;
+	
+
+		var p=power/100*30
+		ball.velocity.x = Math.cos(canion.orient)* p;
+		ball.velocity.y = Math.sin(canion.orient)* p;
+		}
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function loadscene()
+{
+    img_basketball.src ="basketball.png";
+	img_wallA.src = "wall_1.png";
+	img_wallB.src = "wall_2.png";
+	img_wallC.src = "wall_3.png";
+	img_wallD.src = "wall_4.png";
+	img_wall0.src = "wall_0.png";
+	img_flecha.src = "flecha.png";
+	img_bowser.src = "bowser.png";
+	img_heidong.src = "heidong.png";
+	// piso
+    piso = _world.AddBox(OX+DX/2-3,OY+DY-9.5,DX-3,1);
+	piso.img=img_wallA;
+	piso.id=ID_floor;
+    piso.SetStatic();
+	var p = _world.AddBox(OX+DX/2-3,OY+2.5,DX-3,1);
+	p.img=img_wallA;
+    p.SetStatic();
+	p = _world.AddBox(0,27.5,1,DY-11);
+	p.img=img_wallB;
+    p.SetStatic();
+	p = _world.AddBox(DX-3,27.5,1,DY-11);
+	p.img=img_wallB;
+    p.SetStatic();
+	
+	p = _world.AddBox(85.5,36,1,5);
+	p.img=img_wall0;
+	p.SetStatic();
+	p = _world.AddBox(84.5,37.5,1,1);
+	p.visible=false;
+	p.SetStatic();
+	p = _world.AddBox(80.5,37.5,0.5,0.5);
+	p.visible=false;
+	p.SetStatic();
+	
+	p = _world.AddBox(75.5,36,1,5);
+	p.img=img_wall0;
+	p.SetStatic();
+	p = _world.AddBox(74.5,37.5,1,1);
+	p.visible=false;
+	p.SetStatic();
+	p = _world.AddBox(70.5,37.5,0.5,0.5);
+	p.visible=false;
+	p.SetStatic();
+	
+	p = _world.AddBox(65.5,36,1,5);
+	p.img=img_wall0;
+	p.SetStatic();
+	p = _world.AddBox(64.5,37.5,1,1);
+	p.visible=false;
+	p.SetStatic();
+	p = _world.AddBox(60.5,37.5,0.5,0.5);
+	p.visible=false;
+	p.SetStatic();
+	
+	p = _world.AddBox(5,27.5,0.5,0.5);
+	p.visible=false;
+	p.SetStatic();
+	p = _world.AddBox(1,27.7,1,1);
+	p.visible=false;
+	p.SetStatic();
+	
+
+	q = _world.AddBox(55,18.5,5,1);
+	q.img=img_wallC;
+	q.SetStatic();	
+	q1 = _world.AddBox(55,25.5,5,1);
+	q1.img=img_wallC;
+	q1.SetStatic();
+	q2 = _world.AddBox(55,32.5,5,1);
+	q2.img=img_wallC;
+	q2.SetStatic();
+	
+	qa = _world.AddBox(45,7,1,6);
+	qa.img=img_heidong;
+	qa.id=ID_floor;
+	qa.SetStatic();
+	//canionB
+	qb = _world.AddBox(40,7,5,5);
+	qb.shape.SetCenterOfMass(new Vector2(0,1));
+	qb.img=img_bowser;
+	qb.id=ID_floor;
+	qb.SetStatic();
+	
+	//canionA
+	canion = _world.AddBox(OX+5,OY+DY-15,7,3);
+	canion.shape.SetCenterOfMass(new Vector2(-3,0));
+	canion.SetOrient(-1);
+	canion.img = img_flecha;
+	canion.SetStatic();
+	
+	
+	
+	
+    init = true;
+
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	img_background.src = 'background.png';
+	img_background1.src = 'background1.png';
+	img_background_end.src = 'background_end.png';
+	img_background_lose.src = 'background_lose.png';
+	img_mas1.src = '+1.png';
+	img_mas5.src = '+5.png';
+	img_mas10.src = '+10.png';
+	img_menos10.src = '-10.png';
+	img_wall00_yellow.src = 'wall_00_yellow.png';
+	img_wall00_green.src = 'wall_00_green.png';
+	img_wall00_red.src = 'wall_00_red.png';
+	img_wall01_blue.src = 'wall_01_blue.png';
+	img_background_start.src = 'background_start.png';
+	img_flechaUP.src = 'flecha_up.png';
+	img_flechaDOWN.src = 'flecha_down.png';
+	img_flechaLEFT.src = 'flecha_left.png';
+	img_flechaRIGHT.src = 'flecha_right.png';
+	img_space.src = 'space.png';
+	img_keyboard.src = 'keyboard.png';
+	img_mouse.src = 'mouse.png';
+	img_guidao.src = 'guidao.png';
+	loadscene();
+    setInterval(RenderLoop, elapsed_time * 1000);
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="900" height="600"></canvas>
+</body>
+</html>
+ 

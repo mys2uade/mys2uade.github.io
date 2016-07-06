@@ -1,0 +1,1051 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+var OX = 2;
+var OY = 2;
+var DX = 80;
+var DY = 50;
+
+var img_pig = new Image();
+var img_background = new Image();
+var img_woodH = new Image();
+var img_stoneV=new Image();
+var img_egg=new Image();
+var img_portal1=new Image();
+var img_portal2=new Image();
+var img_stone=new Image();
+var img_quimica=new Image();
+var img_principal=new Image();
+var img_pass=new Image();
+var img_end=new Image();
+var img_nivel_1=new Image();
+var img_nivel_2=new Image();
+var img_nivel_3=new Image();
+var img_nivel_4=new Image();
+var img_nivel_5=new Image();
+var img_back=new Image();
+var img_cama_elastica=new Image();
+var img_arriba=new Image();
+var img_derecha=new Image();
+
+
+var timer=0;
+var pause=false;
+var llave=false;
+var end=false;
+var lock=false;
+
+
+var escena_nada=0;
+var escena_primero=1;
+var escena_segundo=2;
+var escena_tercero=3;
+var escena_cuarto=4;
+var escena_quiento=5;
+var escena_guia=6;
+var escena_interno=escena_nada;
+var punto=0;
+
+var mouse_x = 0;
+var mouse_y = 0;
+var vel=5;
+var velocidad=7;
+var gravity = new Vector2( 0, 0 );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+var init = false;
+var colisiona = false;
+var colisiona1= false;
+var colisiona2=false;
+var colisiona3=false;
+var chanchito=null;
+var piso= null;
+var portal1_2=new Vector2(DX/2+10,DY/2+15);
+var portal2_2=null;
+var portal1_3=new Vector2(DX/2+2,DY/2+13);
+var portal2_3=null;
+var portal1_5=new Vector2(DX+OX,4);
+var portal2_5=null;
+var status=0;
+var p1=null;
+var p2=null;
+var item=null;
+var ID_Chanchito=999;
+var ID_Huevo=998;
+var ID_piso=997;
+var ID_item=996;
+var ID_spring=995;
+var ID_ba=994;
+var ID_luz=993;
+var ID_pequenio=992;
+var pos_hoyo= new Vector2(DX-18,DY-13);
+var pos_hoyo1=new Vector2(DX/2+OX,DY/5-1);
+var pos_hoyo2=new Vector2(OX+DX-8,OY+DY-15);
+var pos_hoyo3=new Vector2(DX/4+OX-5,DY/3-10);
+var pos_hoyo4=new Vector2(DX/2+6,5);
+var ba=null;
+var luz=null;
+var piso_flotante1=null;
+var piso_flotante2=null;
+var spring=null;
+
+
+function colision()
+  {  
+     for(var i=0;i<_world.m_contactCount;i++)
+	{  
+		var Contact = _world.contacts[i];
+		if(	(Contact.A.id==ID_Chanchito && Contact.B.id==ID_item) ||
+			(Contact.B.id==ID_Chanchito && Contact.A.id==ID_item) )
+		{
+			colisiona = true;
+		}
+		if((Contact.A.id==ID_Chanchito && Contact.B.id==ID_spring) ||
+		   (Contact.B.id==ID_Chanchito && Contact.A.id==ID_spring) )
+		{
+		    colisiona3  = true;
+		}
+		if((Contact.A.id==ID_Chanchito && Contact.B.id==ID_ba) || 
+		   (Contact.B.id==ID_Chanchito && Contact.A.id==ID_ba) )
+		   {
+		   
+		     colisiona1 = true;
+		   }
+		if((Contact.A.id==ID_Chanchito && Contact.B.id==ID_luz) || 
+		   (Contact.B.id==ID_Chanchito && Contact.A.id==ID_luz) )
+		   {
+		   
+		     colisiona2 = true;
+		   }   
+	}
+	return colisiona;
+	return colisiona1;
+	return colisiona2;
+	return colisiona3;
+  }
+
+function Update() 
+{
+    _world.Update(elapsed_time);
+	
+	if(!pause)
+ {
+	switch(punto)
+	{
+      case 0:
+	  if(punto==0)
+	  {
+	    
+	   escena_interno=escena_nada;
+	  }
+	  case 1:
+	  if(punto==1)
+	  {
+	   
+	   escena_interno=escena_primero;
+	  }
+	  break;
+	  case 2:
+	  if(punto==2)
+	  {
+	   
+	   escena_interno=escena_segundo;
+	  
+	  }
+	  break;
+	  case 3:
+	  if(punto==3)
+	  {
+	   
+	   escena_interno=escena_tercero;
+	   
+	  }
+	  break;
+	  case 4:
+	  if(punto==4)
+	  {
+	    escena_interno=escena_cuarto;
+	  }
+	  case 5:
+	  if(punto==5)
+	  {
+	    escena_interno=escena_quiento;
+	  }
+	  case 6:
+	  if(punto==6)
+	  {
+	    escena_interno=escena_guia;
+	  }
+	}
+	
+	switch(escena_interno)
+	{ 
+	case escena_primero:
+    for(var i=0;i<_world.m_bodyCount;i++)
+	 {
+	    var p=_world.bodies[i];
+	    
+	        var salio=false;
+	        if(vec2_substract(pos_hoyo,p.position).length()<2)
+	        {
+                p.position.Set(0,0);
+		        p.SetStatic();
+		        salio = true;
+				punto++;
+                pause=true;	
+               	llave=false;			
+	        }
+		       
+	 } 	    
+			break;
+	case escena_segundo:
+	 for(var i=0;i<_world.m_bodyCount;i++)
+	 {
+	    var p=_world.bodies[i];
+	    var salio=false;
+		
+			  if(vec2_substract(portal1_2,p.position).length()<4)
+	        {
+                p.position.Set(60,10);
+				chanchito.velocity=new Vector2(-50,-9);
+		        salio = true;
+		  
+	        }
+			
+	        if(vec2_substract(pos_hoyo1,p.position).length()<2)
+	        {
+                p.position.Set(0,0);
+		        p.SetStatic();
+		        salio = true;
+				punto++;
+				pause=true;	
+				llave=false;
+                			
+	        }
+		
+	 }	
+			break;
+			
+    case escena_tercero:
+	 for(var i=0;i<_world.m_bodyCount;i++)
+	 {
+	  var p=_world.bodies[i];
+	 
+	        var salio=false;
+	        if(vec2_substract(portal1_3,p.position).length()<3)
+	        {
+                p.position.Set(80,0);
+				chanchito.velocity=new Vector2(20,0);
+		        salio = true;
+		  
+	        }
+			if(vec2_substract(pos_hoyo2,p.position).length()<3)
+	        {
+                p.position.Set(0,0);
+		        p.SetStatic();
+		        salio = true;
+				punto++;
+				pause=true;
+				llave=true;
+               				
+	        }
+		
+	 
+	 }
+	 if(lock){
+	 if(elapsed_time)
+	 {
+	ba.position.y=ba.position.y+vel*elapsed_time;
+	if(ba.position.y>=15)
+	  {
+		vel=-vel;
+	  }
+	 
+	if(ba.position.y<=32)
+	  {
+		vel=-vel;
+	  }
+	 }
+	 }
+	colision();
+	if(colisiona)
+	{
+	 item.deleted=true;
+	 chanchito.deleted=true;
+     chanchito=_world.AddCircle(chanchito.position.x,chanchito.position.y,1);
+	 chanchito.velocity=new Vector2(-20,0);
+	 chanchito.img=img_pig;
+	 colisiona=false;
+	}
+	 break;
+	
+	case escena_cuarto:
+	for(var i=0;i<_world.m_bodyCount;i++)
+	 {
+	    var p=_world.bodies[i];
+	    
+	        var salio=false;
+	        if(vec2_substract(pos_hoyo3,p.position).length()<3)
+	        {
+                p.position.Set(0,0);
+		        p.SetStatic();
+		        salio = true;
+				punto++;
+                pause=true;	
+               	llave=false;			
+	        }
+		       
+	 } 	
+    if(lock)
+	{
+	 if(elapsed_time)
+	 {
+	piso_flotante1.position.y=piso_flotante1.position.y+vel*elapsed_time;
+	piso_flotante2.position.y=piso_flotante2.position.y+vel*elapsed_time;
+	if(piso_flotante1.position.y>=9.8 && piso_flotante2.position.y>=9.8)
+	  {
+		vel=-vel;
+	  }
+	 
+	if(piso_flotante1.position.y<=40 && piso_flotante2.position.y<=40)
+	  {
+		vel=-vel;
+	  }
+	
+	 }
+	}
+	 colision();
+      if(colisiona3)
+	 {
+	  chanchito.velocity=new Vector2(0,-50);
+      colisiona3=false;	  
+	 }	
+	 if(colisiona1)
+	 {
+	  chanchito.velocity=new Vector2(-40,-5);
+	  colisiona1=false;
+	 }
+	
+	break;
+   case escena_quiento:
+   
+    for(var i=0;i<_world.m_bodyCount;i++)
+	 {
+	    var p=_world.bodies[i];
+	    var salio=false;
+	       if(vec2_substract(portal1_5,p.position).length()<3)
+	        {
+                p.position.Set(60,3);
+				chanchito.velocity=new Vector2(-50,0);
+		        salio = true;
+		  
+	        } 
+		   if(vec2_substract(pos_hoyo4,p.position).length()<2)
+	        {
+                p.position.Set(0,0);
+		        p.SetStatic();
+		        salio = true;
+               	llave=false;
+				end=true;
+				
+	        }
+     }	
+	
+      colision();
+    if(colisiona3)
+	 {
+	  chanchito.velocity=new Vector2(50,0);
+      colisiona3=false;	  
+	 }	
+	 if(colisiona2)
+	 {
+	  chanchito.velocity=new Vector2(0,-60);
+	  colisiona2=false;
+	 }
+	 
+	  if(colisiona1)
+	 {
+	  chanchito.velocity=new Vector2(-50,-0);
+	  colisiona1=false;
+	 }
+	 if(colisiona)
+	 {
+	 item.deleted=true;
+	 chanchito.deleted=true;
+     chanchito=_world.AddCircle(chanchito.position.x,chanchito.position.y,1);
+	 chanchito.velocity=new Vector2(30,0);
+	 chanchito.id=ID_Chanchito;
+	 chanchito.img=img_pig;
+	 colisiona=false;
+	 }
+
+      break; 	 
+  }		
+		
+	
+    		
+ }	
+}
+
+
+
+function Render() 
+{   
+    
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		ctx.drawImage(img_background,0, 0, 900,600);
+
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx,ox,oy,ex,ey);
+       
+	    ctx.fillStyle=' rgba(0,0,255,200)';
+		ctx.fillText("Nivel="+punto,10*10,5*10);
+		ctx.font="40px Arial";
+		
+		switch(escena_interno)
+		{
+		case escena_nada:
+		
+		ctx.drawImage(img_principal,0, 0, 900,600);
+		ctx.drawImage(img_nivel_1,70,50,200,200);
+		ctx.drawImage(img_nivel_2,350,50,200,200);
+		ctx.drawImage(img_nivel_3,630,50,200,200);
+		ctx.drawImage(img_nivel_4,220,180,200,200);
+		ctx.drawImage(img_nivel_5,510,190,200,200);
+		
+		break;
+		
+	
+		
+		case escena_primero:
+		
+		
+		ctx.drawImage(img_back,20,450,150,200);
+		
+		ctx.fillStyle='rgb(255,255,255,200)';
+		ctx.beginPath();
+		ctx.drawImage(img_egg,pos_hoyo.x*ex,pos_hoyo.y*ey,40,50);
+		ctx.closePath();
+		ctx.fill();
+		
+      
+		
+		break;
+		case escena_segundo:
+		
+		ctx.drawImage(img_back,20,450,150,200);
+		
+		ctx.fillStyle='rgb(255,255,255,200)';
+		ctx.beginPath();
+		ctx.drawImage(img_egg,pos_hoyo1.x*ex,pos_hoyo1.y*ey,40,50);
+		ctx.closePath();
+	
+		
+		ctx.fillStyle='rgb(255,255,0)';
+		ctx.beginPath();
+		ctx.drawImage(img_portal1,500,330,100,150);
+		ctx.closePath();
+		ctx.fill();
+		
+		break;
+		case escena_tercero:
+		
+		ctx.drawImage(img_back,20,450,150,200);
+		
+		ctx.fillStyle='rgb(255,255,255,200)';
+		ctx.beginPath();
+		ctx.drawImage(img_egg,pos_hoyo2.x*ex,(pos_hoyo2.y)*ey,40,50);
+		ctx.closePath();
+		
+		
+	    ctx.fillStyle='rgb(255,255,0)';
+		ctx.beginPath();
+		ctx.drawImage(img_portal1,390,325,100,100);
+		ctx.closePath();
+		ctx.fill();
+		
+		break;
+		
+		case escena_cuarto:
+		ctx.drawImage(img_back,20,450,150,200);
+		ctx.fillStyle='rgb(255,255,255,200)';
+		ctx.beginPath();
+		ctx.drawImage(img_egg,pos_hoyo3.x*ex,(pos_hoyo3.y)*ey,40,50);
+		ctx.closePath();
+		ctx.drawImage(img_cama_elastica,460,348,200,200);
+		
+		break;
+		
+		case escena_quiento:
+		ctx.drawImage(img_portal1,790,1,100,100);
+		ctx.fillStyle='rgb(255,255,255,200)';
+		ctx.beginPath();
+		ctx.drawImage(img_egg,pos_hoyo4.x*ex,(pos_hoyo4.y-1)*ey,40,50);
+		ctx.closePath();
+		ctx.drawImage(img_back,20,450,150,200);
+		ctx.drawImage(img_arriba,(DX-2)*ex,(DY-11)*ey,80,100);
+		ctx.drawImage(img_derecha,0,(DY-13)*ey,100,120);
+		break;
+		
+	    case escena_guia:
+		ctx.fillStyle = 'rgba(0,0,0,0)';
+        ctx.fillRect(0,0,2000,2000);
+		ctx.drawImage(img_back,20,450,150,200);
+		
+	    ctx.drawImage(img_stoneV,50,30,100,20);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("los tableros de rocas son fijos",170,50);
+		
+		ctx.drawImage(img_woodH,450,30,100,20);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("los tableros de maderos son giratorias",570,40);
+		ctx.fillText("y las controla con su mouse",570,50);
+		
+		ctx.drawImage(img_portal1,50,80,50,50);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("entrada del portal",110,120);
+		
+		ctx.drawImage(img_portal2,450,80,50,50);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("salida del portal",510,120);
+		
+		ctx.drawImage(img_egg,55,150,40,50);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("destino",110,190);
+		
+		ctx.drawImage(img_pig,455,155,40,40);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("su personaje para controlar",515,190);
+		
+		ctx.drawImage(img_arriba,55,220,40,50);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("te tira hacia arriba",110,260);
+		
+		ctx.drawImage(img_derecha,455,220,40,50);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("te tira hacia derecha",515,260);
+		
+		ctx.drawImage(img_cama_elastica,40,270,70,80);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("cama elastica para tirar hacia arriba",110,320);
+		
+		ctx.drawImage(img_back,440,270,60,80);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("para volver a la pantalla principal",515,320);
+		
+		ctx.drawImage(img_woodH,200,350,100,5);
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("para golpear al chancho, controla con su mouse.",350,360);
+		
+		ctx.fillStyle=' rgba(0,0,0,255)';
+		ctx.font="15px Arial";
+		ctx.fillText("la seleccion de las tablas de maderos se realiza con la tecla 'w', tambien sirve para comenzer el juego.",50,390);
+		ctx.fillText("apreta 'espacio' que se caiga el chanchito.",50,420);
+		ctx.fillText("'ENTER' para recomenzar.",450,420);
+		
+		break;
+	  }
+    }
+	if(end){
+	      ctx.drawImage(img_end,0,0,900,600);
+	}
+	if(pause){
+		  ctx.drawImage(img_pass,0, 0, 900,600);		  
+		}
+}
+
+
+function RenderLoop() 
+{
+    /* if (timer>0)
+	 {
+   timer-=elapsed_time;
+     if(timer<=0)
+	  {
+   timer=0;
+   pause=false;
+      }
+     }
+    if(pause)
+	{
+      return;
+    }*/
+    if (!init)
+		return;
+    
+	Update();
+	Render();
+	if(!llave)
+	{
+	 loadscene();
+	}
+	
+
+}
+
+
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex; 
+	var yPos = (mouse_y-oy)/ ey; 
+	if(e.keyCode==65)
+	{
+	   
+	   if(punto==0)
+	   {
+	    punto=1;
+        	
+	   } 
+	  
+	}
+	if(e.keyCode==32)
+	{
+       gravity.y=40;
+	}
+	if(e.keyCode==87)
+	{
+	   llave=true;
+	   lock=true;
+	   status+=1;
+	   if(status>3)
+	   {
+	    status=3;
+	   }
+	}
+	if(e.keyCode==83)
+	{
+	   status--;
+	   if(status<0)
+	   {
+	    status=0;
+	   }
+	}
+	if(e.keyCode==13)
+	{   
+	   
+	    pause=false;
+	    loadscene();
+		
+		
+	}
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+	
+	if(status==1 )
+	{
+	p1.SetOrient(0.03*mouse_y);
+	}
+	if(status==2)
+	{
+	p2.SetOrient(0.03*mouse_y);
+	}
+	if(status==3)
+	{
+	ba.SetOrient(-0.03*mouse_x);
+	}
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+		 if(punto==0)
+		 {
+		 
+		  if((mouse_x>125 && mouse_x<225) && (mouse_y>105 && mouse_y<185))
+		  {
+		   punto=1;
+		  
+		  }
+		  if((mouse_x>395 && mouse_x<495) && (mouse_y>105 && mouse_y<185))
+		  {
+		   punto=2;
+		  
+		  }
+		  if((mouse_x>680 && mouse_x<780) && (mouse_y>105 && mouse_y<185))
+		  {
+		   punto=3;
+		  }
+		  if((mouse_x>270 && mouse_x<370) && (mouse_y>250 && mouse_y<330))
+		  {
+		   punto=4;
+		  }
+		  if((mouse_x>558 && mouse_x<658) && (mouse_y>250 && mouse_y<330))
+		  {
+		   punto=5;
+		  }
+		  if((mouse_x>10  && mouse_x<320) && (mouse_y>510 && mouse_y<540))
+		  {
+		   punto=6;
+		  }
+		 
+		 }
+		 else
+		  if(punto==1 || punto==2 || punto==3 || punto==4 || punto==5 || punto==6)
+		 {
+		   if((mouse_x>50 && mouse_x<150) && (mouse_y>500 && mouse_y<580))
+		  {
+		   
+		   punto=0;
+		   escena_interno=escena_nada;
+		  }
+		 }
+		 
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+           
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) 
+	{
+        case 1:
+        
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function loadscene()
+{
+  _world.Clear();
+   gravity.Set(0,0);
+   img_background.src="background.png";
+   img_woodH.src="woodH.png";
+   img_pig.src="pig.png";
+   img_stoneV.src="stoneV.png";
+   img_egg.src="egg.png";
+   img_portal1.src="portal1.png";
+   img_portal2.src="portal2.png";
+   img_stone.src="stone.png";
+   img_quimica.src="quimica.png";
+   img_principal.src="principal.png";
+   img_pass.src="pass.png";
+   img_end.src="end.png";
+   img_nivel_1.src="nivel1.png";
+   img_nivel_2.src="nivel2.png";
+   img_nivel_3.src="nivel3.png";
+   img_nivel_4.src="nivel4.png";
+   img_nivel_5.src="nivel5.png";
+   img_back.src="back.png";
+   img_arriba.src="arriba.png";
+   img_cama_elastica.src="cama elastica.png";
+   img_derecha.src="derecha.png";
+if(!pause){
+  switch(escena_interno)
+  { 
+    case escena_primero:
+    
+    chanchito=_world.AddCircle(DX/4+OX-5,DY/3-10,2);
+	chanchito.id=ID_Chanchito;
+	chanchito.img=img_pig;
+	
+	
+	
+	p1=_world.AddBox(DX/4+OX,DY/3+OY,15,2);
+	p1.img=img_woodH;
+	p1.SetStatic();
+	
+	
+	p2=_world.AddBox(DX/2+OX,DY/2+OY,15,2);
+	p2.img=img_woodH;
+	p2.SetStatic();
+	
+	var p=_world.AddBox(DX-18,DY-10,15,2);
+	p.SetStatic();
+	p.img=img_stoneV;
+	
+	piso=_world.AddBox(DX/2+3,DY+OY-7,DX+10,0.1);
+	piso.id=ID_piso;
+	piso.visible=false;
+	piso.SetStatic();
+	
+	
+	
+	break;
+	case escena_segundo:
+	 status=0;
+	 chanchito=_world.AddCircle(DX/4-5,DY/3-5,2);
+	 chanchito.img=img_pig;
+	 chanchito.id=ID_Chanchito;
+	 
+	 
+	
+	 p1=_world.AddBox(DX/4,DY/3+6,15,2);
+	 p1.img=img_woodH;
+	 p1.SetStatic();
+	
+	
+	 p2=_world.AddBox(DX/2-3,DY/2+10,2,15);
+	 p2.img=img_woodH
+	 p2.SetStatic();
+	 
+	 
+	
+	 var p=_world.AddBox(DX/2+OX,DY/5+OY,15,2);
+	 p.img=img_stoneV;
+	 p.SetStatic();
+	
+	piso=_world.AddBox(DX/2+3,DY+OY-7,DX+10,0.1);
+	piso.id=ID_piso;
+	piso.visible=false;
+	piso.SetStatic();
+    
+	 portal2_2=_world.AddBox(65,10,10,15);
+	 portal2_2.img=img_portal2;
+	 portal2_2.SetStatic();
+	
+	break;
+	case escena_tercero:
+	status=0;
+	chanchito=_world.AddCircle(OX+5,DY/5-5,2);
+	chanchito.img=img_pig;
+	chanchito.id=ID_Chanchito;
+	
+	p1=_world.AddBox(OX+5,DY/5+5,15,2);
+	p1.img=img_woodH;
+	p1.SetStatic();
+	
+	for(j=0;j<2;j++)
+	{
+	   var p=_world.AddBox(OX+DX-j*15,OY+DY/5+j*10,15,2); 
+	   p.img=img_stoneV;
+	   p.SetStatic();  
+	   p=_world.AddBox(OX+DX+5,OY+3,2,12);
+	   p.img=img_stone;
+	   p.SetStatic();
+	   p=_world.AddBox(DX-6.5,OY+DY/5+4,2,10);
+	   p.img=img_stone;
+	   p.SetStatic();
+	   p=_world.AddBox(DX-21.5,OY+DY/5+11.9,2,5);
+	   p.img=img_stone;
+	   p.SetStatic();
+	   p=_world.AddBox(OX+DX/2-12,OY+DY/5+15.5,20,2);
+	   p.img=img_stoneV;
+	   p.SetStatic();
+	}
+	
+	item=_world.AddCircle(65,19.5,2)
+	item.id=ID_item;
+	item.img=img_quimica;
+	item.SetStatic();
+	
+	ba=_world.AddBox(OX+DX/2+0.1,27,4.2,2);
+	ba.img=img_stoneV;
+	ba.SetStatic();
+	
+	p2=_world.AddBox(OX+DX-30,OY+DY/5+15.5,15,2);
+	p2.img=img_woodH;
+	p2.SetStatic(); 
+	
+	p=_world.AddBox(OX+DX-10,OY+DY-12,15,2);
+	p.img=img_stoneV;
+	p.SetStatic();
+	
+	portal2_3=_world.AddBox(73,1,5,5);
+	portal2_3.img=img_portal2;
+	portal2_3.SetStatic();
+	
+	piso=_world.AddBox(DX/2+3,DY+OY-7,DX+10,0.1);
+	piso.id=ID_piso;
+	piso.visible=false;
+	piso.SetStatic();
+	break;
+	
+	case escena_cuarto:
+	status=0;
+	var p=_world.AddBox(DX/4+OX-5,DY/3-6.9,15,2);
+	p.img=img_stoneV;
+	p.SetStatic();
+	
+	spring=_world.AddBox(DX-25,DY-8,4,6);
+	spring.id=ID_spring;
+	spring.visible=false;
+	spring.SetStatic();
+	
+	chanchito=_world.AddCircle(DX-10,DY/3,2);
+	chanchito.img=img_pig;
+	chanchito.id=ID_Chanchito;
+	
+	p1=_world.AddBox(DX-10,DY/3+10,15,2);
+	p1.img=img_woodH;
+	p1.SetStatic();
+	
+	p2=_world.AddBox(DX-29,DY/4+10,15,2);
+	p2.img=img_woodH;
+	p2.SetStatic();
+	
+	piso_flotante1=_world.AddBox(DX/4+OX+6,DY-10,7.7,2);
+	piso_flotante1.img=img_stoneV;
+	piso_flotante1.SetStatic();
+	
+	piso_flotante2=_world.AddBox(DX/4+OX+17,DY-10,7.7,2);
+	piso_flotante2.img=img_stoneV;
+	piso_flotante2.SetStatic();
+	
+	ba=_world.AddBox(DX/4+OX+16,DY/3-15,17,0.5);
+	ba.shape.SetCenterOfMass(new Vector2(-6,0));
+	ba.img=img_woodH;
+	ba.id= ID_ba;
+	ba.SetStatic();
+	
+	piso=_world.AddBox(DX/2+3,DY+OY-7,DX+10,0.1);
+	piso.id=ID_piso;
+	piso.visible=false;
+	piso.SetStatic();
+	
+	break;
+	
+	case escena_quiento:
+	
+	chanchito=_world.AddCircle(DX/2-6,0,2);
+	chanchito.id=ID_Chanchito;
+	chanchito.img=img_pig;
+	
+	var p=_world.AddBox(DX/2,DY/2-7,2,40);
+	p.img=img_stone;
+	p.SetStatic();
+	
+	p=_world.AddBox(DX/2+6,7,10,2);
+	p.img=img_stoneV;
+	p.SetStatic();
+	
+	p1=_world.AddBox(DX/2-6,7,10,2);
+	p1.img=img_woodH;
+	p1.SetStatic();
+	
+	p=_world.AddBox(DX/2-18,15,10,2);
+	p.img=img_stoneV;
+	p.SetOrient(3/4);
+	p.SetStatic();
+	
+	p2=_world.AddBox(DX/2-10,25,10,2);
+	p2.img=img_woodH;
+	p2.SetStatic();
+	
+	piso=_world.AddBox(DX/2+3,DY+OY-7,DX+10,0.1);
+	piso.id=ID_piso;
+	piso.visible=false;
+	piso.SetStatic();
+	
+	spring=_world.AddBox(0,DY+OY-9,5,3);
+	spring.id=ID_spring;
+	spring.visible=false;
+	spring.SetStatic();
+	
+	luz=_world.AddBox(DX+OX,DY+OY-8,2,2);
+	luz.id=ID_luz;
+	luz.visible=false;
+	luz.SetStatic();
+	
+	ba=_world.AddBox(DX+OX+3,25,0.5,15);
+	ba.id=ID_ba;
+	ba.img=img_woodH;
+	ba.SetStatic();
+	
+	p=_world.AddBox(DX/2+3.5,35,5,2);
+	p.img=img_stoneV;
+	p.SetStatic();
+	
+	item=_world.AddCircle(DX/2+3.5,32.5,2)
+	item.id=ID_item;
+	item.img=img_quimica;
+	item.SetStatic();
+	
+	p=_world.AddBox(DX+OX-4,7,4,2);
+	p.img=img_stoneV;
+	p.SetStatic();
+	
+	p=_world.AddBox(DX+OX+4,7,4,2);
+	p.img=img_stoneV;
+	p.SetStatic();
+	
+	portal2_5=_world.AddBox(60,3,10,10);
+	portal2_5.img=img_portal2;
+	portal2_5.SetStatic();
+	
+	break;
+	
+  }
+  }
+   init = true; 
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+  
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	loadscene();
+    setInterval(RenderLoop, elapsed_time * 1000);
+	
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas"  width="900" height="600"></canvas>
+</body>
+</html>
+ 

@@ -1,0 +1,300 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+// pos y tamaño de pantalla
+var OX = 50;
+var OY = 50;
+var DX = 1000 - (OX * 2);
+var DY = 700 - (OY * 2);
+
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+var gravity = new Vector2( 0, 0 );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+var _body = new Body();
+var init = false;
+var Status = 2;
+
+//Variables de Inicio
+var ImgInicio = new Image();
+var TextPvP = "Jugador vs Jugador";
+var posTextPvP = {x:340, y: DY - 180};
+var TextInstrucciones = "Instrucciones";
+var posTextInstrucciones = {x: posTextPvP.x + 25, y: posTextPvP.y + 40};
+
+//Variables de Jugadores
+var ImgCancha = new Image();
+var posRect = {x: 45, y: 40};
+var AnchoRect = (DX - OX) - 85;  
+var AltoRect = (DY - OY) - 85;
+var ImgJugador1 = new Image();
+var SpriteJugador1 = {p1: 67 * 19,p2: 0};
+var ImgJugador2 = new Image();
+var SpriteJugador2 = {p1: 0 ,p2: 0};
+var ImgEscudos = new Image();
+var SpriteEscudoJugador1 = {p1: 0,p2: 0};
+var SpriteEscudoJugador2 = {p1: 0,p2: 0};
+var AnchoEscudo = 67;
+var AltoEscudo = 76;
+var posEscudo = {x: AnchoRect / 4 - AnchoEscudo / 2,y: 100};
+var posImgJugador1 = {x: AnchoRect / 4 - AnchoEscudo / 2,y: posEscudo.y + AltoEscudo};
+var posImgJugador2 = {x: posImgJugador1.x,y: posImgJugador1.y};
+var TextoSeleccionEquipos = "Seleccion de Equipos";
+var posTextoSeleccionEquipos = {x: AnchoRect / 2 - 50, y: 80};
+var VectorTextoEquipos = ["Arsenal","Aston Villa","Cardiff","Chelsea",
+						  "Crystal Palace","Everton","Fulham","Hullcity",
+						  "Liverpool","Man City","Man United","NewCastle",
+						  "Norwich","Southamptom","Stoke City","Sunderland",
+						  "Swansea","Tottenham","WestBrom","WestHam"];
+
+var posVectorTextEquipos = {x: posImgJugador1.x, y: AltoRect / 2 + AltoEscudo / 2};
+var Indice1 = 0;
+var Indice2 = 0;
+var ImgBotinJugador1 = new Image();
+var posImgBotinJugador1 = {x: posImgJugador1.x + 15, y:posImgJugador1.y + AltoEscudo - 17};
+var ImgBotinJugador2 = new Image();
+var posImgBotinJugador2 = {x:posImgBotinJugador1.x, y:posImgBotinJugador1.y};
+
+//Variables de Dificultad
+var ImgDificultad = new Image();
+var posImgDificultad = {x: AnchoRect / 2 - 55, y: posVectorTextEquipos.y + 80};
+var SpriteImgDificultad = {p1: 0, p2: 0};
+var AnchoImgDificultad = 196;
+var AltoImgDificultad = 132; 
+var TextoSeleccionEquipos = "Seleccion de Dificultad";
+var posTextoSeleccionDificultad = {x: AnchoRect / 2 - 60,y: posVectorTextEquipos.y + 50};
+
+//Variables de Juego
+var ImgCanchaJuego = new Image();
+var ImgResTiemp = new Image();
+var AnchoImgResTiemp = 420;
+var AltoImgResTiemp = 76;
+var posImgResTiemp = {x: DX / 2 - AnchoImgResTiemp / 2, y: 424 + AltoImgResTiemp};
+
+
+function Inicio()
+{
+	ctx.drawImage(ImgInicio, OX, OY,DX - OX,DY - OY);
+	
+	//Dibujo el TextPvP
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(TextPvP, OX + posTextPvP.x, OY + posTextPvP.y);
+	
+	//Dibujo el TextInstrucciones
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(TextInstrucciones, OX + posTextInstrucciones.x, OY + posTextInstrucciones.y);
+
+	
+}
+
+function ElejirJugadoresYDificultad()
+{
+	ctx.drawImage(ImgCancha, OX, OY,DX - OX,DY - OY);
+	
+	//Dibujo el rectangulo
+	ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(OX + posRect.x,OY + posRect.y,AnchoRect,AltoRect);
+	
+	//Dibujo el Texto Seleccion de Equipos
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(TextoSeleccionEquipos,  OX + posTextoSeleccionEquipos.x , OY + posTextoSeleccionEquipos.y);
+	
+	//Jugador1
+	ctx.drawImage(ImgEscudos, SpriteEscudoJugador1.p1, SpriteEscudoJugador1.p2, AnchoEscudo, AltoEscudo,OX + posEscudo.x, OY + posEscudo.y, AnchoEscudo, AltoEscudo);
+	ctx.drawImage(ImgJugador1,SpriteJugador1.p1,SpriteJugador1.p2,AnchoEscudo,AltoEscudo,OX + posImgJugador1.x,OY + posImgJugador1.y,AnchoEscudo,AltoEscudo);
+	ctx.drawImage(ImgBotinJugador1, OX + posImgBotinJugador1.x, OY + posImgBotinJugador1.y);
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(VectorTextoEquipos[Indice1], OX + posVectorTextEquipos.x , OY + posVectorTextEquipos.y + 10);
+	
+	
+	//Jugador2
+	ctx.drawImage(ImgEscudos, SpriteEscudoJugador1.p1, SpriteEscudoJugador1.p2, AnchoEscudo, AltoEscudo,OX + posEscudo.x * 4, OY + posEscudo.y, AnchoEscudo, AltoEscudo);
+    ctx.drawImage(ImgJugador2,SpriteJugador2.p1,SpriteJugador2.p2,AnchoEscudo,AltoEscudo,OX + posImgJugador2.x * 4,OY + posImgJugador2.y,AnchoEscudo,AltoEscudo);
+	ctx.drawImage(ImgBotinJugador2, OX + posImgBotinJugador2.x * 4 - 30, OY + posImgBotinJugador2.y);
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(VectorTextoEquipos[Indice2],  OX + posVectorTextEquipos.x * 4 , OY + posVectorTextEquipos.y + 10);
+	
+	//VectorDificultad
+	ctx.fillStyle = 'rgba(255,0,0,255)';
+	ctx.font = "20px Arial";
+	ctx.fillText(TextoSeleccionEquipos, OX + posTextoSeleccionDificultad.x , OY + posTextoSeleccionDificultad.y);
+	ctx.drawImage(ImgDificultad, SpriteImgDificultad.p1, SpriteImgDificultad.p2, AnchoImgDificultad, AltoImgDificultad, OX + posImgDificultad.x, OY + posImgDificultad.y, AnchoImgDificultad, AltoImgDificultad);
+	
+} 
+
+function Jugar()
+{
+	ctx.drawImage(ImgCanchaJuego, OX, OY,DX - OX,DY - OY);
+	
+	ctx.drawImage(ImgResTiemp,posImgResTiemp.x, OY + posImgResTiemp.y);
+	
+}
+function Update() 
+{
+    _world.Update(elapsed_time);
+	
+	}
+
+function Render() 
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(255,255,255,255)';
+        ctx.fillRect(0,0,2000,2000);
+		
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(OX,OY,1000,700);
+	
+		// dibujo la escena esquematica con el motor 
+		_world.Render(ctx);
+		
+		switch(Status)
+		{
+			case 0: Inicio(); break;
+			case 1: ElejirJugadoresYDificultad(); break;
+			case 3: Jugar(); break;
+		}
+	}
+	
+}
+
+
+function RenderLoop() 
+{
+	
+		if (!init)
+			return;
+		
+		Render();
+		Update();
+		
+}
+
+function doKeyUp(e) 
+{
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+}
+
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function loadscene()
+{
+	
+	// piso
+	
+    	
+	init = true;
+
+}
+
+function main()
+{   
+	document.addEventListener( "keyup", doKeyUp, true);
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+	
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	loadscene();
+    setInterval(RenderLoop, elapsed_time * 1000);
+	
+	ImgInicio.src = 'Archivos png/Inicio.png';
+	ImgJugador1.src = 'Archivos png/VectorJugadores2.png';
+	ImgJugador2.src = 'Archivos png/VectorJugadores1.png';
+	ImgEscudos.src = 'Archivos png/VectorEscudos.png';
+	ImgCancha.src = 'Archivos png/Cancha.png';
+	ImgDificultad.src = 'Archivos png/VectorDificultades.png';
+	ImgBotinJugador1.src = 'Archivos png/Botin2.png';
+	ImgBotinJugador2.src = 'Archivos png/Botin1.png';
+	ImgCanchaJuego.src = 'Archivos png/Escenario.png';
+	ImgResTiemp.src = 'Archivos png/ResTiemp.png';
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="900" height="600"></canvas>
+</body>
+</html>
+ 

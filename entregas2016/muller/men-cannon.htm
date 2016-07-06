@@ -1,0 +1,1341 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="engine/math.js"></script>
+<script type="text/javascript" src="engine/body.js"></script>
+<script type="text/javascript" src="engine/world.js"></script>
+<script type="text/javascript" src="engine/collision.js"></script>
+<script type="text/javascript" src="engine/contact.js"></script>
+<script type="text/javascript" src="engine/constraint.js"></script>
+<script type="text/javascript" src="engine/ragdoll.js"></script>
+
+<script type="text/javascript">
+
+var estable = true;
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+// pos y tamaño de pantalla
+var OX = 0;
+var OY = 1;
+var DX = 86;
+var DY = 55;
+
+// posicion del cañon
+var cannon_x = 7;
+var cannon_y = 49.3;
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+var gravity = new Vector2( 0, 40 );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+var _body = new Body();
+var init = false;
+var pause = false;
+
+//general
+var cannon;
+var ball;
+var barra;
+var barra1;
+var barra2;
+var barra3;
+var barra4;
+var barra5;
+var barra6;
+var barra7;
+var z;
+var man;
+var dist = 0;
+var k = 0;
+var altpot = 20;
+var altpot2 = 14;
+var vidas = 4;
+var cont = 0;
+var contobs = 0;
+var velimg = 20;
+var objetivos = 3;
+
+//timers
+var timerv = 0;
+var timerw = 0;
+var timerexp = 0;
+var timerexp2 = 0;
+var timersangre = 0;
+var timersangre2 = 0;
+
+//posiciones
+var posp_x = 0;
+var posp_y = 0;
+var posp_x2 = 0;
+var posp_y2 = 0;
+var posp_x3 = 0;
+var posp_y3 = 0;
+var posp_x4 = 0;
+var posp_y4 = 0;
+var pospinche_x = 0;
+var pospinche_x2 = 0;
+
+//IDs
+var idBall = 1;
+var idTNT = 2;
+var idPilar = 3;
+var idColch = 4;
+var idPiso = 5;
+var idPinche = 6;
+var idSierra = 7;
+var idBarra = 8;
+var idMan = 100;
+var newID = 101;
+
+// niveles
+var flagscorelevel1 = true;
+var flagscorelevel2 = false;
+var flagscorelevel3 = false;
+
+//flagscores
+var flagscore = true;
+var flagscore2 = true;
+var flagscoreinit = true;
+var flagscoredraw = false;
+var flagscorewin = false;
+var flagscoreexp = true;
+var flagscorescene = false;
+var flagscoreerror1 = true;
+var flagscoreerror2 = false;
+var flagscoresangre = true;
+var flagscoresangre2 = true;
+var flagscoreobj = true;
+var flagscorepos = true;
+var flagscorepos2 = true;
+var flagscoreID = true;
+var flagscoreID2 = false;
+var flagscoretrap1 = true;
+var flagscoretrap2 = true;
+var flagbarra1 = true;
+var flagbarra2 = false;
+var flagbarra3 = true;
+var flagbarra4 = false;
+var flagbarra5 = true;
+var flagbarra6 = false;
+var flagbarra7 = true;
+var flagbarra8 = false;
+var flagbarra9 = true;
+var flagbarra10 = false;
+var flagbarra11 = true;
+var flagbarra12 = false;
+var flagbarra13 = true;
+var flagbarra14 = false;
+var flagbarra15 = true;
+var flagbarra16 = false;
+var flagsierra = false;
+var flagtnt = false;
+var flagpinche = false;
+
+// Imagenes
+var fondo = new Image();
+var base = new Image();
+var cañon = new Image();
+var suelo = new Image();
+var bala = new Image();
+var pilar = new Image();
+var pilar2 = new Image();
+var metal = new Image();
+var tnt = new Image();
+var exp = new Image();
+var colch = new Image();
+var sangre = new Image();
+var sangre2 = new Image();
+var sangre3 = new Image();
+var man = new Image();
+var pinche = new Image();
+var sierra = new Image();
+var torso = new Image();
+var tick = new Image();
+var mainmenu = new Image();
+var levelcomplete = new Image();
+var gamepaused = new Image();
+var play = new Image();
+var continuar = new Image();
+var nextlevel = new Image();
+var instructions = new Image();
+var back = new Image();
+var gameover = new Image();
+var tryagain = new Image();
+
+function Update() 
+{
+    _world.Update(elapsed_time);
+	
+	// manejo al trayectoria de la bala y la inclinacion y potencia del canion
+	var angulo = Math.atan2(mouse_y-cannon_y*ey-oy, mouse_x-cannon_x*ex-ox);
+	
+	if(angulo <= -90*Math.PI/180)
+	{
+		angulo = -90*Math.PI/180;
+	}
+	
+	if(angulo > 0)
+	{
+		angulo = 0;
+	}
+	
+	cannon.SetOrient(angulo);
+	
+	dist = Math.sqrt((mouse_x - cannon_x * ex) * (mouse_x - cannon_x * ex) + (mouse_y - cannon_y * ey) * (mouse_y - cannon_y * ey))
+	
+	k = dist * 0.20000;
+	
+	if(k < 40)
+	{
+		k = 40;
+	}
+	else
+	{
+		if(k > 100)
+		{
+			k = 100;
+		}
+	}
+	
+	altpot = 20 - k * 2;
+	altpot2 = 14 - k * 2;
+	
+	// manejo las vidas
+	if(vidas == 0 && flagscore == true)
+	{
+		timerv = 0.01;
+		flagscore = false;
+	}
+	
+	// pierdo el juego
+	if(timerv > 0)
+	{
+		timerv += elapsed_time;
+		if(timerv >= 5)
+		{
+			flagscore2 = false;
+			pause = true;
+		}
+	}
+	
+	// gano el juego
+	if(timerw > 0)
+	{
+		timerw += elapsed_time;
+		if(timerw >= 1.5)
+		{
+			pause = true;
+		}
+	}
+	
+	//pausa menu principal
+	if(flagscoreinit == true)
+	{
+		pause = true;
+	}
+	
+	// detecto las colisiones
+	for(var i = 0; i < _world.m_contactCount;i++)
+	{
+		var contact = _world.contacts[i];
+		if((contact.A.id > 1000 && contact.B.id == idTNT)||(contact.A.id == idPiso && contact.B.id == idTNT))
+		{
+			if(flagscoreexp == true && contact.B.position.x > 30)
+			{
+				if(contact.A.id > 1000 && flagscoreobj == true)
+				{
+					objetivos -= 1;
+					flagscoreobj = false;
+				}
+				if(flagscoreerror1 == true)
+				{
+					posp_x = contact.B.position.x;
+					posp_y = contact.B.position.y;
+					timerexp = 0.01;
+				}
+				if(flagscoreerror2 == true)
+				{
+					posp_x2 = contact.B.position.x;
+					posp_y2 = contact.B.position.y;
+					timerexp2 = 0.01;
+				}
+			}
+			contact.B.deleted = true;
+			contact.B.visible = false;
+			if(contact.A.id > 1000)
+			{
+				BorrarID(contact.A.id);
+			}
+			flagscoreexp = false;
+			flagtnt = true;
+		}
+		else
+		{
+			if((contact.A.id == idTNT && contact.B.id > 1000)||(contact.A.id == idTNT && contact.B.id == idPiso))
+			{
+				if(flagscoreexp == true && contact.A.position.x > 30)
+				{
+					posp_x = contact.A.position.x;
+					posp_y = contact.A.position.y;
+					if(contact.B.id > 1000 && flagscoreobj == true)
+					{
+						objetivos -= 1;
+						flagscoreobj = false;
+					}
+					if(flagscoreerror1 == true)
+					{
+						timerexp = 0.01;
+					}
+					if(flagscoreerror2 == true)
+					{
+						timerexp2 = 0.01;
+					}
+				}
+				contact.A.deleted = true;
+				contact.A.visible = false;
+				if(contact.B.id > 1000)
+				{
+					BorrarID(contact.B.id);
+				}
+				flagscoreexp = false;
+				flagtnt = true;
+			}
+		}
+	}
+	flagscoreobj = true;
+	for(var i = 0; i < _world.m_contactCount;i++)
+	{
+		var contact = _world.contacts[i];
+		if((contact.A.id > 1000 && contact.B.id == idPinche) && (contact.A.position.x >= pospinche_x) && (contact.A.position.x <= pospinche_x2))
+		{
+			if(contact.A.id == newID)
+			{
+				if(flagscorepos == true)
+				{
+					if(flagscoretrap1 == true)
+					{
+						objetivos -= 1;
+						flagscoretrap1 = false;
+					}
+					posp_x3 = contact.A.position.x;
+					posp_y3 = contact.A.position.y;
+					flagscorepos = false;
+				}
+				if(flagscoresangre == true)
+				{
+					timersangre = 0.01;
+				}
+				newID++;
+				flagscoreID2 = false;
+				flagpinche = true;
+			}
+		}
+		else
+		{
+			if((contact.A.id == idPinche && contact.B.id > 1000) && (contact.B.position.x >= pospinche_x) && (contact.B.position.x <= pospinche_x2))
+			{
+				if(contact.B.id == newID)
+				{
+					if(flagscorepos == true)
+					{
+						if(flagscoretrap1 == true)
+						{
+							objetivos -= 1;
+							flagscoretrap1 = false;
+						}
+						posp_x3 = contact.B.position.x;
+						posp_y3 = contact.B.position.y;
+						flagscorepos = false;
+					}
+					if(flagscoresangre == true)
+					{
+						timersangre = 0.01;
+					}
+					newID++;
+					flagscoreID2 = false;
+					flagpinche = true;
+				}
+			}
+		}
+	}
+	
+	for(var i = 0; i < _world.m_contactCount;i++)
+	{
+		var contact = _world.contacts[i];
+		if(contact.A.id > 1000 && contact.B.id == idSierra)
+		{
+			if(contact.A.id == newID)
+			{
+				if(flagscorepos2 == true)
+				{
+					if(flagscoretrap2 == true)
+					{
+						objetivos -= 1;
+						flagscoretrap2 = false;
+					}
+					posp_x4 = contact.A.position.x;
+					posp_y4 = contact.A.position.y;
+					flagscorepos2 = false;
+				}
+				if(flagscoresangre2 == true)
+				{
+					timersangre2 = 0.01;
+				}
+				newID++;
+				flagscoreID2 = false;
+				flagsierra = true;
+			}
+		}
+		else
+		{
+			if(contact.A.id == idSierra && contact.B.id > 1000)
+			{
+				if(contact.B.id == newID)
+				{
+					if(flagscorepos2 == true)
+					{
+						if(flagscoretrap2 == true)
+						{
+							objetivos -= 1;
+							flagscoretrap2 = false;
+						}
+						posp_x4 = contact.B.position.x;
+						posp_y4 = contact.B.position.y;
+						flagscorepos2 = false;
+					}
+					if(flagscoresangre2 == true)
+					{
+						timersangre2 = 0.01;
+					}
+					newID++;
+					flagscoreID2 = false;
+					flagsierra = true;
+				}
+			}
+		}
+	}
+		
+	// computo la explosion
+	if(timerexp > 0)
+	{
+		flagscoreerror1 = false;
+		flagscoreerror2 = true;
+		timerexp += velimg * elapsed_time;
+		if(timerexp >= 25.30)
+		{
+			timerexp = 0;
+			flagscoreexp = true;
+		}
+	}
+	
+	if(timerexp2 > 0)
+	{
+		flagscoreerror1 = true;
+		flagscoreerror2 = false;
+		timerexp2 += velimg * elapsed_time;
+		if(timerexp2 >= 25.30)
+		{
+			timerexp2 = 0;
+			flagscoreexp = true;
+		}
+	}
+	
+	if(timersangre > 0)
+	{
+		flagscoresangre = false;
+		timersangre += velimg * elapsed_time;
+		if(timersangre >= 25.30)
+		{
+			timersangre = 0;
+			flagscorepos = true;
+			flagscoresangre = true;
+		}
+	}
+	
+	if(timersangre2 > 0)
+	{
+		flagscoresangre2 = false;
+		timersangre2 += velimg * elapsed_time;
+		if(timersangre2 >= 25.30)
+		{
+			timersangre2 = 0;
+			flagscorepos2 = true;
+			flagscoresangre2 = true;
+		}
+	}
+	
+	// gano el nivel
+	if(objetivos <= 0 && flagscorewin == false)
+	{
+		flagscorewin = true;
+		timerv = 0;
+		timerw = 0.01;
+	}
+	
+	// cargo al escena
+	if(flagscorescene == true)
+	{
+		loadscene();
+		flagscorescene = false;
+		flagscorewin = false;
+	}
+	
+	// muevo las barras
+	if(flagscorelevel1 == true)
+	{
+		if(barra.position.y >= 10 && flagbarra1 == true)
+		{
+			barra.position.y -= 25 * elapsed_time;
+		}
+		if(barra.position.y <= 10)
+		{
+			flagbarra1 = false;
+			flagbarra2 = true;
+		}
+		if(barra.position.y <= 45 && flagbarra2 == true)
+		{
+			barra.position.y += 25 * elapsed_time;
+		}
+		if(barra.position.y >= 45)
+		{
+			flagbarra1 = true;
+			flagbarra2 = false;
+		}
+	}
+	
+	if(flagscorelevel3 == true)
+	{
+		if(barra1.position.y >= 10 && flagbarra5 == true)
+		{
+			barra1.position.y -= 25 * elapsed_time;
+		}
+		if(barra1.position.y <= 10)
+		{
+			flagbarra5 = false;
+			flagbarra6 = true;
+		}
+		if(barra1.position.y <= 45 && flagbarra6 == true)
+		{
+			barra1.position.y += 25 * elapsed_time;
+		}
+		if(barra1.position.y >= 45)
+		{
+			flagbarra5 = true;
+			flagbarra6 = false;
+		}
+		if(barra2.position.y >= 10 && flagbarra3 == true)
+		{
+			barra2.position.y -= 25 * elapsed_time;
+		}
+		if(barra2.position.y <= 10)
+		{
+			flagbarra3 = false;
+			flagbarra4 = true;
+		}
+		if(barra2.position.y <= 45 && flagbarra4 == true)
+		{
+			barra2.position.y += 25 * elapsed_time;
+		}
+		if(barra2.position.y >= 45)
+		{
+			flagbarra3 = true;
+			flagbarra4 = false;
+		}
+		if(barra3.position.x >= 66 && flagbarra7 == true)
+		{
+			barra3.position.x -= 25 * elapsed_time;
+		}
+		if(barra3.position.x <= 66)
+		{
+			flagbarra7 = false;
+			flagbarra8 = true;
+		}
+		if(barra3.position.x <= 80 && flagbarra8 == true)
+		{
+			barra3.position.x += 25 * elapsed_time;
+		}
+		if(barra3.position.x >= 80)
+		{
+			flagbarra7 = true;
+			flagbarra8 = false;
+		}
+	}
+	
+	if(flagscorelevel2 == true)
+	{
+		if(barra4.position.x >= 50 && flagbarra9 == true)
+		{
+			barra4.position.x -= 15 * elapsed_time;
+		}
+		if(barra4.position.x <= 50)
+		{
+			flagbarra9 = false;
+			flagbarra10 = true;
+		}
+		if(barra4.position.x <= 80 && flagbarra10 == true)
+		{
+			barra4.position.x += 15 * elapsed_time;
+		}
+		if(barra4.position.x >= 80)
+		{
+			flagbarra9 = true;
+			flagbarra10 = false;
+		}
+		if(barra5.position.x >= 44 && flagbarra11 == true)
+		{
+			barra5.position.x -= 15 * elapsed_time;
+		}
+		if(barra5.position.x <= 44)
+		{
+			flagbarra11 = false;
+			flagbarra12 = true;
+		}
+		if(barra5.position.x <= 74 && flagbarra12 == true)
+		{
+			barra5.position.x += 15 * elapsed_time;
+		}
+		if(barra5.position.x >= 74)
+		{
+			flagbarra11 = true;
+			flagbarra12 = false;
+		}
+		if(barra6.position.x >= 56 && flagbarra13 == true)
+		{
+			barra6.position.x -= 15 * elapsed_time;
+		}
+		if(barra6.position.x <= 56)
+		{
+			flagbarra13 = false;
+			flagbarra14 = true;
+		}
+		if(barra6.position.x <= 86 && flagbarra14 == true)
+		{
+			barra6.position.x += 15 * elapsed_time;
+		}
+		if(barra6.position.x >= 86)
+		{
+			flagbarra13 = true;
+			flagbarra14 = false;
+		}
+		if(barra7.position.x >= 50 && flagbarra15 == true)
+		{
+			barra7.position.x -= 15 * elapsed_time;
+		}
+		if(barra7.position.x <= 50)
+		{
+			flagbarra15 = false;
+			flagbarra16 = true;
+		}
+		if(barra7.position.x <= 80 && flagbarra16 == true)
+		{
+			barra7.position.x += 15 * elapsed_time;
+		}
+		if(barra7.position.x >= 80)
+		{
+			flagbarra15 = true;
+			flagbarra16 = false;
+		}
+	}
+}
+
+function Render() 
+{
+	if(!estable) return;
+	estable = false;
+    if (canvas.getContext)
+    {
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+
+		// dibujo el fondo
+		ctx.drawImage(fondo, 0,0,2000,2000);
+	
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx);
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		
+		// dibujo el suelo
+		ctx.drawImage(suelo, 0, 555, 1100, 120);
+		
+		// dibujo la base del cañon
+		ctx.drawImage(base, 35,520,90,60);
+		
+		// dibujo la barra de potencia
+		ctx.fillStyle = 'rgba(105,105,105,255)';
+		ctx.fillRect(37, 453, 16, altpot2);
+	
+		ctx.fillStyle = 'rgba(255,0,0,255)';
+		ctx.fillRect(40, 450, 10, altpot);
+		
+		var angulo = cannon.orient;
+		var posc_x = 65;
+		var posc_y = 460;
+		var c = Math.cos(angulo);
+		var s = Math.sin(angulo);
+		var off_x = -40;
+		var off_y = -60;
+		var x = DX - (DX - posc_x) - off_x;
+		var y = DY - (DY - posc_y) - off_y;
+		// dibujo el cañon
+		ctx.save();
+		ctx.setTransform(c, s, -s, c, c * (-x) - s * (-y) + x, s * (-x) + c * (-y) + y);
+		ctx.drawImage(cañon, posc_x,posc_y,100,80);
+		ctx.restore();
+		
+		// dibujo los ragdolls
+		//ctx.drawImage(torso, _body.upperBody.postion.x, _body.upperBody.postion.y, 100,100);
+		/*
+		ctx.font = "20px Arial"
+		ctx.fillText(dist,10,70);
+	
+		ctx.font = "20px Arial"
+		ctx.fillText(k,10,90);
+	
+		ctx.font = "20px Arial"
+		ctx.fillText(angulo*180/(2*Math.PI),10,110);
+		
+		ctx.font = "20px Arial"
+		ctx.fillText(vidas,10,130);
+		
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText("pausa", 10, 250)
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText(pause, 10, 280)
+		*/
+		
+		// dibujo las vidas
+		ctx.fillStyle = 'rgba(255,255,255,0.5)';
+		ctx.fillRect(0,0,150,70);
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText('Vidas',45,20);
+		for (var i = 0; i < vidas; i++)
+		{
+			ctx.drawImage(man, 8+35*i,30,35,35);
+		}
+		
+		// dibujo los objetivos
+		ctx.fillStyle = 'rgba(255,255,255,0.5)';
+		ctx.fillRect(0,70,150,70);
+		ctx.fillStyle = 'rgba(0,0,0,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText('Objetivos',30,90);
+		ctx.drawImage(tnt, 10,100,35,35);
+		ctx.drawImage(sierra, 60,100,35,35);
+		ctx.drawImage(pinche, 110,100,35,35);
+		if(flagtnt == true)
+		{
+			ctx.drawImage(tick, 10,100,35,35);
+		}
+		if(flagsierra == true)
+		{
+			ctx.drawImage(tick, 60,100,35,35);
+		}
+		if(flagpinche == true)
+		{
+			ctx.drawImage(tick, 110,100,35,35);
+		}
+		
+		// pierdo el juego
+		if(vidas == 0 && timerv >= 5)
+		{
+			ctx.drawImage(gameover,0 , 0, 900, 600);
+			ctx.drawImage(tryagain,375 , 300, 150, 50);
+		}
+	
+		// pauso el juego
+		if(pause == true && flagscore2 == true && !flagscoreinit && !flagscorewin)
+		{
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.fillRect(0,0,2000,2000);
+			ctx.drawImage(gamepaused,0 , 0, 900, 600);
+			ctx.drawImage(continuar,375 , 300, 150, 50);
+		}
+	
+		// menu principal
+		if(flagscoreinit == true)
+		{
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.fillRect(0,0,2000,2000);
+			ctx.drawImage(mainmenu,0 , 0, 900, 600);
+			if(!flagscoredraw)
+			{
+				ctx.drawImage(play,350 , 280, 150, 50);
+				ctx.drawImage(instructions,335 , 370, 180, 50);
+			}
+		}
+	
+		if(flagscoredraw == true)
+		{
+			ctx.drawImage(back,100,500,150,50);
+		
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "23px Arial"
+			ctx.fillText('Para jugar se usa el mouse. Se apunta moviendolo, y se ajusta la',100,250);
+			ctx.fillText('potencia acercando o a lejandolo del cañon. Con la P se pone en pausa.',100,280);
+			ctx.fillText('El objetivo es impactar un proyectil en cada uno de los obetivos, pero',100,310);
+			ctx.fillText('cuidado, los proyectiles son humanos!',100,340);
+		}
+		
+		// gano el juego
+		if(timerw >= 1.5 && flagscorewin == true)
+		{
+			if(!flagscorelevel3)
+			{
+				ctx.drawImage(levelcomplete,0 , 0, 900, 600);
+				ctx.drawImage(nextlevel,375 , 300, 150, 50);
+			}
+			if(flagscorelevel3)
+			{
+				ctx.fillStyle = 'rgba(255,255,255,0.5)';
+				ctx.fillRect(0,0,2000,2000);
+				ctx.fillStyle = 'rgba(255,255,255,255)';
+				ctx.font = "60px Arial"
+				ctx.fillText('Game Complete',250,150);
+			}
+		}
+		// dibujo la explosion
+		if(!pause)
+		{
+			if (timerexp > 0)
+			{
+				ctx.drawImage(sangre, 142.875 * Math.floor(timerexp), 0, 142.875, 109, posp_x * ex - 55,posp_y * ey - 55, 150, 150);
+				ctx.drawImage(exp, 61 * Math.floor(timerexp), 0, 61, 62, posp_x * ex - 30,posp_y * ey - 30, 100, 100);
+			}
+			
+			if (timerexp2 > 0)
+			{
+				ctx.drawImage(sangre, 142.875 * Math.floor(timerexp2), 0, 142.875, 109, posp_x2 * ex - 55,posp_y2 * ey - 55, 150, 150);
+				ctx.drawImage(exp, 61 * Math.floor(timerexp2), 0, 61, 62, posp_x2 * ex - 30,posp_y2 * ey - 30, 100, 100);
+			}
+			
+			if (timersangre > 0)
+			{
+				ctx.drawImage(sangre2, 230 * Math.floor(timersangre), 0, 230, 132, posp_x3 * ex - 55,posp_y3 * ey - 60, 150, 150);
+			}
+			
+			if (timersangre2 > 0)
+			{
+				ctx.drawImage(sangre3, 180 * Math.floor(timersangre2), 0, 180, 142, posp_x4 * ex,posp_y4 * ey - 60, 150, 150);
+			}
+		}
+	}
+	estable = true;
+	
+}
+
+
+function RenderLoop() 
+{
+	
+		if (!init)
+			return;
+		
+		Render();
+		if(!pause)
+		{
+			Update();
+		}
+}
+
+function click()
+{
+	// computo el tiro parabolico
+	if(vidas > 0 && !pause)
+	{
+		vidas--;
+		var angulo = cannon.orient;
+		var i0 = _world.m_bodyCount;
+		RagDollBody(10 * Math.cos(angulo) + cannon_x, 10 * Math.sin(angulo) + cannon_y,0.35,cannon.orient+Math.PI/2);
+		idMan++;
+		for (var i = i0; i < _world.m_bodyCount; ++i)
+		{
+			var B = _world.bodies[i];
+			B.id = 1000 + idMan;
+			B.velocity.x = Math.cos(angulo)* k;
+			B.velocity.y = Math.sin(angulo)* k;
+			if(flagscoreID == true)
+			{
+				newID = B.id;
+				flagscoreID = false;
+			}
+		}
+		if(flagscoreID2 == true)
+		{
+			newID++;
+		}
+		flagscoreID2 = true;
+	}
+	else
+	{
+		// pierdo el juego
+		if(vidas == 0 && timerv >= 5)
+		{
+			// try again
+			if((mouse_x > 375 && mouse_x < 525)&&(mouse_y > 300 && mouse_y < 350))
+			{
+				vidas = 4;
+				flagscore = true;
+				flagscore2 = true;
+				timerv = 0;
+				_world.Clear();
+				pause = false;
+				flagscorescene = true;
+				objetivos = 3;
+				flagscoretrap1 = true;
+				flagscoretrap2 = true;
+				flagtnt = false;
+				flagsierra = false;
+				flagpinche = false;
+			}
+		}
+	}
+	
+	// pauso el juego		
+	if(pause == true && flagscore2 == true && !flagscoreinit && !flagscorewin)
+	{
+		if((mouse_x > 375 && mouse_x < 525)&&(mouse_y > 300 && mouse_y < 350))
+		{
+			pause = false;
+		}
+	}
+	
+	// menu principal
+	if(flagscoreinit == true)
+	{
+		if((mouse_x > 350 && mouse_x < 500)&&(mouse_y > 280 && mouse_y < 330))
+		{
+			pause = false;
+			flagscoreinit = false;
+		}
+		else
+		{
+			if((mouse_x > 335 && mouse_x < 515)&&(mouse_y > 370 && mouse_y < 420))
+			{
+				flagscoredraw = true;
+			}ctx.fillRect(300,335,58,25);
+		}
+		if(flagscoredraw == true)														// instrucciones
+		{
+			if((mouse_x > 100 && mouse_x < 250)&&(mouse_y > 500 && mouse_y < 550))
+				{
+					flagscoredraw = false;
+				}ctx.drawImage(back,100,500,150,50)
+		}
+	}
+	// gano el juego
+	if(timerw >= 1.5 && flagscorewin == true)
+	{
+		if((mouse_x > 375 && mouse_x < 525)&&(mouse_y > 300 && mouse_y < 350)&&(!flagscorelevel3))
+		{
+			timerw = 0;
+			pause = false;
+			vidas = 3;
+			objetivos = 3;
+			_world.Clear();
+			flagscore = true;
+			if(flagscorelevel2 == true)
+			{
+				flagscorelevel2 = false;
+				flagscorelevel3 = true;
+			}
+			if(flagscorelevel1 == true)
+			{
+				flagscorelevel1 = false;
+				flagscorelevel2 = true;
+			}
+			flagscoretrap1 = true;
+			flagscoretrap2 = true;
+			flagtnt = false;
+			flagsierra = false;
+			flagpinche = false;
+			flagscorescene = true;
+		}
+	}
+}
+
+function BorrarID(ID)
+{
+	var cant = _world.m_constraintCount;
+	_world.m_constraintCount = 0;
+	for (var i = 0; i < cant; ++i)
+	{
+		if(_world.constraints[i].A.id != ID && _world.constraints[i].B.id != ID)
+		{
+			_world.constraints[_world.m_constraintCount]= _world.constraints[i];
+			_world.m_constraintCount++;
+		}
+	}
+	cant = _world.m_bodyCount;
+	_world.m_bodyCount = 0;
+	for (var i = 0; i < cant; ++i)
+	{
+		if(_world.bodies[i].id != ID)
+		{
+			_world.bodies[_world.m_bodyCount]= _world.bodies[i];
+			_world.m_bodyCount++;
+		}
+	}
+}
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex; 
+	var yPos = (mouse_y-oy)/ ey; 
+	
+	if(e.keyCode == 80)
+	{
+		pause = !pause;
+	}
+	if(e.keyCode == 66)
+	{
+		RagDollBody(xPos,yPos,0.35,1);
+	}
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+			click();
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function loadscene()
+{
+	// piso
+    var piso = _world.AddBox(OX+DX/2,OY+DY-1.5,DX+4,2);
+    piso.SetStatic();
+	piso.visible = false;
+	piso.id = idPiso;
+	
+	var anchcan = 2;
+	cannon = _world.AddBox(cannon_x, cannon_y, anchcan, 3);
+	cannon.SetStatic();
+	cannon.visible = false;
+	
+	cannon.shape.SetCenterOfMass(new Vector2(-cannon_x/2, 0));
+	
+	if(flagscorelevel1 == true)
+	{
+		pospinche_x = 47;
+		pospinche_x2 = 53;
+		var Tri = [new Vector2(50-4.5,30), new Vector2(53-4.5,30), new Vector2(51.5-4.5,24)];
+		var Tri2 = [new Vector2(53-4.5,30), new Vector2(56-4.5,30), new Vector2(54.5-4.5,24)];
+		var Tri3 = [new Vector2(56-4.5,30), new Vector2(59-4.5,30), new Vector2(57.5-4.5,24)];
+		
+		p =	_world.AddPoly(Tri, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		p =	_world.AddPoly(Tri2, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		p =	_world.AddPoly(Tri3, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		
+		var p = _world.AddBox(85,44,15,1.5);
+		p.SetStatic();
+		p.img = pilar2;
+		p.id = idPilar;
+		p = _world.AddBox(50,45,2,30);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(50,30,9,2);
+		p.SetStatic();
+		p.img = pilar2;
+		p.id = idPilar;
+		
+		var a = _world.AddBox(82,41.2,4,4);;
+		a.img = tnt;
+		a.id = idTNT;
+		
+		var x = _world.AddBox(70,0,2,20);
+		x.SetStatic();
+		x.img = pilar;
+		x.id = idPilar;
+		x.collider_list = [cannon];
+		
+		var z = _world.AddCircle(70,10,5)
+		z.id = idSierra;
+		z.angularVelocity = 500;
+		z.img = sierra;
+		z.dynamicFriction = 0;
+		
+		x = _world.AddBox(64,10,2,10);
+		x.SetStatic();
+		x.visible = false;
+		x.collider_list = [z];
+		x = _world.AddBox(76,10,2,10);
+		x.SetStatic();
+		x.visible = false;
+		x.collider_list = [z];
+		x = _world.AddBox(70,4,10,2);
+		x.SetStatic();
+		x.visible = false;
+		x.collider_list = [z];
+		x = _world.AddBox(70,16,10,2);
+		x.SetStatic();
+		x.visible = false;
+		x.collider_list = [z];
+		
+		barra = _world.AddBox(60,30,2,10);
+		barra.img = pilar;
+		barra.SetStatic();
+		barra.id = idBarra;
+		
+	}
+	if(flagscorelevel3 == true)
+	{	
+		pospinche_x = 47;
+		pospinche_x2 = 53;
+		var Tri = [new Vector2(50-4.5,30+23), new Vector2(53-4.5,30+23), new Vector2(51.5-4.5,24+23)];
+		var Tri2 = [new Vector2(53-4.5,30+23), new Vector2(56-4.5,30+23), new Vector2(54.5-4.5,24+23)];
+		var Tri3 = [new Vector2(56-4.5,30+23), new Vector2(59-4.5,30+23), new Vector2(57.5-4.5,24+23)];
+		
+		p =	_world.AddPoly(Tri, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		p =	_world.AddPoly(Tri2, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		p =	_world.AddPoly(Tri3, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		p = _world.AddBox(50,53,9,2);
+		p.SetStatic();
+		p.img = pilar2;
+		p.id = idPilar;
+		p = _world.AddBox(75,53,9,2);
+		p.SetStatic();
+		p.img = pilar2;
+		p.id = idPilar;
+		
+		var a = _world.AddBox(75,50,4,4);;
+		a.img = tnt;
+		a.id = idTNT;
+		
+		p = _world.AddBox(20,50,2,10);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		
+		x = _world.AddBox(70,0,2,20);
+		x.SetStatic();
+		x.img = pilar;
+		x.id = idPilar;
+		x.collider_list = [cannon];
+		
+		z = _world.AddCircle(70,10,5)
+		z.id = idSierra;
+		z.angularVelocity = 500;
+		z.img = sierra;
+		z.dynamicFriction = 0;
+		
+		x = _world.AddBox(64,10,2,10);
+		x.SetStatic();
+		x.visible = false;
+		x.collider_list = [z];
+		x = _world.AddBox(76,10,2,10);
+		x.SetStatic();
+		x.visible = false;
+		x.collider_list = [z];
+		x = _world.AddBox(70,4,10,2);
+		x.SetStatic();
+		x.visible = false;
+		x.collider_list = [z];
+		x = _world.AddBox(70,16,10,2);
+		x.SetStatic();
+		x.visible = false;
+		x.collider_list = [z];
+		
+		barra1 = _world.AddBox(40,10,2,10);
+		barra1.img = pilar;
+		barra1.SetStatic();
+		barra1.id = idBarra;
+		
+		barra2 = _world.AddBox(60,45,2,10);
+		barra2.img = pilar;
+		barra2.SetStatic();
+		barra2.id = idBarra;
+		
+		barra3 = _world.AddBox(80,20,10,2);
+		barra3.img = pilar2;
+		barra3.SetStatic();
+		barra3.id = idBarra;
+		
+	}
+	
+	if(flagscorelevel2 == true)
+	{	
+		pospinche_x = 47;
+		pospinche_x2 = 53;
+		var Tri = [new Vector2(50-4.5,30+23), new Vector2(53-4.5,30+23), new Vector2(51.5-4.5,24+23)];
+		var Tri2 = [new Vector2(53-4.5,30+23), new Vector2(56-4.5,30+23), new Vector2(54.5-4.5,24+23)];
+		var Tri3 = [new Vector2(56-4.5,30+23), new Vector2(59-4.5,30+23), new Vector2(57.5-4.5,24+23)];
+		
+		p =	_world.AddPoly(Tri, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		p =	_world.AddPoly(Tri2, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		p =	_world.AddPoly(Tri3, 3);
+		p.SetStatic();
+		p.img = pinche;
+		p.id = idPinche;
+		p = _world.AddBox(50,53,9,2);
+		p.SetStatic();
+		p.img = pilar2;
+		p.id = idPilar;
+		p = _world.AddBox(75,53,9,2);
+		p.SetStatic();
+		p.img = pilar2;
+		p.id = idPilar;
+		
+		var a = _world.AddBox(75,50,4,4);;
+		a.img = tnt;
+		a.id = idTNT;
+		
+		p = _world.AddBox(45,50,2,10);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(70,50,2,10);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		
+		z = _world.AddCircle(70,10+25,5)
+		z.id = idSierra;
+		z.angularVelocity = 500;
+		z.img = sierra;
+		z.dynamicFriction = 0;
+		
+		barra5 = _world.AddBox(64,10+25,2,10);
+		barra5.SetStatic();
+		barra5.visible = false;
+		barra5.collider_list = [z];
+		barra6 = _world.AddBox(76,10+25,2,10);
+		barra6.SetStatic();
+		barra6.visible = false;
+		barra6.collider_list = [z];
+		barra7 = _world.AddBox(70,4+25,10,2);
+		barra7.SetStatic();
+		barra7.visible = false;
+		barra7.collider_list = [z];
+		barra4 = _world.AddBox(70,14+25,10,2);
+		barra4.SetStatic();
+		barra4.img = pilar2;
+		
+	}
+    init = true;
+
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+	fondo.src = 'background1.png';
+	base.src = 'canion1.png';
+	cañon.src = 'canion2.png';
+	suelo.src = 'arena.png';
+	bala.src = 'ball.png';
+	pilar.src = 'pilarmadera.png';
+	pilar2.src = 'pilarmaderarecostada.png';
+	metal.src = 'barrametal.png';
+	tnt.src = 'tnt.png';
+	exp.src = 'explosion.png';
+	sangre.src = 'explosionsangre.png';
+	sangre2.src = 'explosionsangre2.png';
+	sangre3.src = 'explosionsangre3.png';
+	man.src = 'stickman.png';
+	pinche.src = 'pinche.png';
+	torso.src = 'torso.png';
+	sierra.src = 'sierra.png';
+	tick.src = 'tick.png';
+	mainmenu.src = 'mainmenu.png';
+	levelcomplete.src = 'levelcomplete.png';
+	gamepaused.src = 'gamepaused.png';
+	play.src = 'play.png';
+	continuar.src = 'continue.png';
+	nextlevel.src = 'nextlevel.png';
+	instructions.src = 'instructions.png';
+	back.src = 'back.png';
+	gameover.src = 'gameover.png';
+	tryagain.src = 'tryagain.png';
+
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	loadscene();
+    setInterval(RenderLoop, elapsed_time * 1000);
+}
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="900" height="600"></canvas>
+</body>
+</html>
+ 

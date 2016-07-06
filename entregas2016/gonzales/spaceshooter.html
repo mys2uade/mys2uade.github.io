@@ -1,0 +1,661 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="../engine/math.js"></script>
+<script type="text/javascript" src="../engine/body.js"></script>
+<script type="text/javascript" src="../engine/world.js"></script>
+<script type="text/javascript" src="../engine/collision.js"></script>
+<script type="text/javascript" src="../engine/contact.js"></script>
+<script type="text/javascript" src="../engine/constraint.js"></script>
+<script type="text/javascript" src="../engine/ragdall.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+var gravity = new Vector2( 0, 0 );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+var init = false;
+
+//cuerpo triangulo
+var nave;
+
+//bala
+var bala;
+
+//Variables de Score
+var Puntaje = 0;
+var Puntaje_m =0;
+var TextPuntaje = "Score: ";
+var posPuntaje = {x: 800,y: 100};
+
+//vel imagen
+var velimg = 20;
+var posp_x2 = 0;
+var posp_y2 = 0;
+var timerexp = 0;
+
+//movimientos
+var left_arrow = false;
+var right_arrow = false;
+var up_arrow = false;
+var down_arrow = false;
+var shoot =false
+
+//enemigos
+var asteroide_1;
+var asteroide_2;
+var asteroide_3;
+var idAsteroide =100;
+var idBala =150;
+var idNave =200;
+var idMet = 250;
+//rotacion met
+var met;
+var centro;
+//movimiento izquierda y derecha
+var mov_ast_1 = 0;
+var mov_ast_2 = 0;
+var mov_ast_3 = 0;
+var limite_1=0;
+var limite_2=0;
+var limite_3=0;
+
+
+//estado 
+var status_bala = 0;
+var status_asteroide = 0;
+var cant_asteroide = Math.floor((Math.random() * 3) + 1);
+
+
+//imagenes
+var img_explosion = new Image(); 
+var img_nave = new Image();
+var img_asteroide = new Image();
+var img_bala = new Image();
+var img_fondo = new Image();
+var img_met = new Image();
+function Update() 
+{
+    _world.Update(elapsed_time);
+		var vel =  20;
+		var vel_x =  25;
+		var vel_bala = 40;
+
+	//MOVIMIENTOS
+	if(left_arrow == true){
+		nave.position.x -= vel * elapsed_time;
+		if(shoot==false){
+			bala.position.x -= vel *elapsed_time;
+		}
+	}
+	if(right_arrow == true){
+		nave.position.x += vel * elapsed_time;
+		if(shoot==false){
+			bala.position.x += vel *elapsed_time;
+		}
+	}	
+	if(up_arrow == true){
+		nave.position.y -= vel * elapsed_time;
+		if(shoot==false){
+			bala.position.y -= vel *elapsed_time;
+		}
+	}	
+	if(down_arrow == true) {
+		nave.position.y += vel * elapsed_time;
+		if(shoot==false){
+			bala.position.y += vel *elapsed_time;
+		}
+	}
+	//aparicion de asteroides
+	if (Puntaje_m<=10){
+		if (status_asteroide == 0){
+			if(cant_asteroide == 1){
+				status_asteroide =1;
+				asteroide_1.position.x = Math.floor((Math.random() * 85) + 5);
+				mov_ast_1 = Math.floor((Math.random() * 2) + 1);
+				asteroide_1.visible=true;
+			}
+			else{
+				if(cant_asteroide==2){
+					status_asteroide =1;
+					asteroide_1.position.x = Math.floor((Math.random() * 85) + 5);
+					mov_ast_1 = Math.floor((Math.random() * 2) + 1);
+					asteroide_1.visible=true;
+					asteroide_2.position.x = Math.floor((Math.random() * 85) + 5);
+					mov_ast_2 = Math.floor((Math.random() * 2) + 1);
+					asteroide_2.visible=true;
+				}
+				else{
+					if(cant_asteroide==3){
+					status_asteroide =1;
+					asteroide_1.position.x=Math.floor((Math.random() * 85) + 5);
+					asteroide_1.visible=true;
+					mov_ast_1 = Math.floor((Math.random() * 2) + 1);
+					asteroide_2.position.x=Math.floor((Math.random() * 85) + 5);
+					asteroide_2.visible=true;
+					mov_ast_2 = Math.floor((Math.random() * 2) + 1);
+					asteroide_3.position.x=Math.floor((Math.random() * 85) + 5);
+					asteroide_3.visible=true;
+					mov_ast_3 = Math.floor((Math.random() * 2) + 1);
+					}
+				}
+			}
+		}
+	
+
+	//movimientos de asteroides
+	
+		if(cant_asteroide == 1 ){
+				
+			asteroide_1.position.y+=vel*elapsed_time;
+			if(mov_ast_1 == 1){
+				
+				if(asteroide_1.position.x<95 && limite_1 == 0){
+					asteroide_1.position.x+=vel_x*elapsed_time;
+				}
+				else{
+					asteroide_1.position.x-=vel_x*elapsed_time;
+					limite_1 =1;
+				}
+			}
+			else
+			{
+				if(asteroide_1.position.x>0 && limite_1 == 0){
+				asteroide_1.position.x-=vel_x*elapsed_time;
+				}
+				else{
+					asteroide_1.position.x+=vel_x*elapsed_time;
+					limite_1 =1;
+				}
+			}	
+			
+		}
+		else
+		{
+			if(cant_asteroide == 2 ){
+				asteroide_1.position.y+=vel*elapsed_time;
+				if(mov_ast_1 == 1){
+					if(asteroide_1.position.x<95 && limite_1 == 0){
+						asteroide_1.position.x+=vel_x*elapsed_time;
+					}
+					else{
+					asteroide_1.position.x-=vel_x*elapsed_time;
+					limite_1 =1;
+					}
+				}
+				else{
+					if(asteroide_1.position.x>0 && limite_1 == 0){
+						asteroide_1.position.x-=vel_x*elapsed_time;
+					}
+					else{
+						asteroide_1.position.x+=vel_x*elapsed_time;
+						limite_1 =1;
+					}
+				}
+				
+				asteroide_2.position.y+=vel*elapsed_time;
+				if(mov_ast_2 == 1){
+					if(asteroide_2.position.x<95 && limite_2 == 0){
+						asteroide_2.position.x+=vel_x*elapsed_time;
+					}
+					else{
+					asteroide_2.position.x-=vel_x*elapsed_time;
+					limite_2 =1;
+					}
+				}
+				else{
+					if(asteroide_2.position.x>0 && limite_2 == 0){
+						asteroide_2.position.x-=vel_x*elapsed_time;
+					}
+					else{
+						asteroide_2.position.x+=vel_x*elapsed_time;
+						limite_2 =1;
+					}
+				}
+			}
+			else
+			{
+			
+				asteroide_1.position.y+=vel*elapsed_time;
+				
+			if(mov_ast_1 == 1){
+					if(asteroide_1.position.x<95 && limite_1 == 0){
+						asteroide_1.position.x+=vel_x*elapsed_time;
+					}
+					else{
+						asteroide_1.position.x-=vel_x*elapsed_time;
+						limite_1 =1;
+					}
+			}
+			else{
+				if(asteroide_1.position.x>0 && limite_1 == 0){
+					asteroide_1.position.x-=vel_x*elapsed_time;
+				}
+				else{
+					asteroide_1.position.x+=vel_x*elapsed_time;
+					limite_1 =1;
+				}
+			}	
+				
+			asteroide_2.position.y+=vel*elapsed_time;
+				
+			if(mov_ast_2 == 1){
+					if(asteroide_2.position.x<95 && limite_2 == 0){
+						asteroide_2.position.x+=vel_x*elapsed_time;
+					}
+					else{
+						asteroide_2.position.x-=vel_x*elapsed_time;
+						limite_2 =1;
+					}
+			}
+			else{
+					if(asteroide_2.position.x>0 && limite_2 == 0){
+						asteroide_2.position.x-=vel_x*elapsed_time;
+					}
+					else{
+						asteroide_2.position.x+=vel_x*elapsed_time;
+						limite_2 =1;
+					}
+			}	
+				
+				asteroide_3.position.y+=vel*elapsed_time;
+				
+			if(mov_ast_3 == 1){
+					if(asteroide_3.position.x<95 && limite_3 == 0){
+						asteroide_3.position.x+=vel_x*elapsed_time;
+					}
+					else{
+						asteroide_3.position.x-=vel_x*elapsed_time;
+						limite_3 =1;
+					}
+			}
+			else{
+					if(asteroide_3.position.x>0 && limite_3 == 0){
+						asteroide_3.position.x-=vel_x*elapsed_time;
+					}
+					else{
+						asteroide_3.position.x+=vel_x*elapsed_time;
+						limite_3 =1;
+					}
+			}	
+		}
+			
+		
+		}
+	}
+	else{
+	//aparece meteoro
+		met.position.x=0;
+		centro.position.x=0;
+		centro.position.y= 20;
+		met.position.y=0;
+		met.velocity.Set(50 , 0);
+		met.restitution = 2;
+		centro.velocity.Set(0 , 10);
+		met.visible = true;
+		Puntaje_m=0;
+	}
+	
+	
+	//pasa limite, reinicia
+	if (cant_asteroide==1  && asteroide_1.position.y>=90)
+	{	
+		asteroide_1.visible =  false;
+		asteroide_1.position.y =-1;
+		cant_asteroide = Math.floor((Math.random() * 3) + 1);
+		status_asteroide =0;
+		limite_1=0;
+
+		
+	}
+	if (cant_asteroide==2  && asteroide_1.position.y>=90 && asteroide_2.position.y>=90)
+	{	
+		asteroide_1.visible =  false;
+		asteroide_1.position.y = -1;
+		asteroide_2.position.y = -1;
+		asteroide_2.visible =  false;
+		cant_asteroide = Math.floor((Math.random() * 3) + 1);
+		status_asteroide =0;
+		limite_1=0;
+		limite_2=0;
+
+	}
+	if (cant_asteroide == 3  && asteroide_1.position.y>=90 && asteroide_2.position.y>=90 && asteroide_3.position.y>=90)
+	{	
+		asteroide_1.visible =  false;
+		asteroide_2.visible =  false;
+		asteroide_3.visible = false;
+		asteroide_1.position.y =-1;
+		asteroide_2.position.y =-1;
+		asteroide_3.position.y =-1;
+		cant_asteroide = Math.floor((Math.random() * 3) + 1);
+		status_asteroide =0;
+		limite_1=0;
+		limite_2=0;
+		limite_3=0;
+	}
+	//bala
+	if(shoot==true){
+		bala.visible = true;
+		
+		bala.position.y-=vel_bala *elapsed_time;
+	}
+	//contacto de asteroide y bala
+	
+	for(var i = 0; i < _world.m_contactCount;i++)
+	{
+		//contacto con asteroide
+		var contact = _world.contacts[i];
+		if(contact.A.id == idBala && contact.B.id == idAsteroide && shoot==true)
+		{
+			
+			bala.position.y =nave.position.y;
+		    bala.position.x =nave.position.x+0.4;
+			shoot=false;
+			contact.B.visible = false;
+			
+			contact.A.visible = false;
+			timerexp = 0.01;
+			posp_x2 = contact.B.position.x;
+			posp_y2 = contact.B.position.y;
+			contact.B.position.y =90;
+			Puntaje+=10;
+			Puntaje_m+=10;
+		}
+		else
+		{
+			if(contact.A.id == idAsteroide && contact.B.id == idBala && shoot==true)
+			{
+			  
+			  bala.position.y = nave.position.y;
+			  bala.position.x = nave.position.x+0.4;
+			  shoot=false;
+			  contact.A.visible = false;
+			  contact.B.visible = false;
+			  timerexp = 0.01;
+			  posp_x2 = contact.A.position.x;
+			  posp_y2 = contact.A.position.y;
+			  contact.A.position.y =90;
+			  Puntaje+=10;
+			  Puntaje_m+=10;
+
+			}
+		}
+		//contacto meteoro EN ESTE CONTACTO QUIERO QUE LA BALA VUELVA A LA POSICION DE LA NAVE PERO ADQUIERE UNA FUERZA QUE NO LE PERMITE MANTENERSE INMOVIL. ESTO ES POR CHOCAR CON EL METEORO
+		if(contact.A.id == idBala && contact.B.id == idMet && shoot==true)
+		{
+		   
+			bala.position.y =nave.position.y;
+		    bala.position.x =nave.position.x+0.4;
+			shoot=false;
+			contact.B.visible = false;
+			
+			contact.A.visible = false;
+			timerexp = 0.01;
+			posp_x2 = contact.B.position.x;
+			posp_y2 = contact.B.position.y;
+			met.position.x=0;
+			centro.position.x=0;
+			centro.position.y= 20;
+			met.position.y=0;
+			Puntaje+=30;
+
+		   		    
+			
+		}
+		else
+		{
+			if(contact.A.id == idMet && contact.B.id == idBala && shoot==true)
+			{
+			
+				
+			  bala.position.y = nave.position.y;
+			  bala.position.x = nave.position.x+0.4;
+			  shoot=false;
+			  contact.A.visible = false;
+			  contact.B.visible = false;
+			  timerexp = 0.01;
+			  posp_x2 = contact.A.position.x;
+			  posp_y2 = contact.A.position.y;
+			  	met.position.x=0;
+				centro.position.x=0;
+				centro.position.y= 20;
+				met.position.y=0;
+		 
+				Puntaje+=30;
+				
+			}
+	}
+	
+	}
+	
+		if(timerexp > 0)
+	{
+	
+		timerexp += velimg * elapsed_time;
+		if(timerexp >= 25.30)
+		{
+			timerexp = 0;
+			
+		}
+	}
+	//paso de la bala por y = 0
+	if(shoot ==true && bala.position.y <0){
+		shoot = false;
+		bala.position.y =nave.position.y;
+		bala.position.x =nave.position.x+0.4;
+		
+		bala.visible = false;
+		}
+}
+
+function Render() 
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+		ctx.drawImage(img_fondo, 0,0,1000,900);
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx,ox,oy,ex,ey);
+		ctx.fillText(TextPuntaje + Puntaje, posPuntaje.x, posPuntaje.y);
+		if (timerexp > 0)
+		{
+			ctx.drawImage(img_explosion, 61*Math.floor(timerexp), 0, 61, 62, posp_x2 * ex - 30,posp_y2 * ey - 30, 100, 100);
+		}
+    }
+}
+
+
+function RenderLoop() 
+{
+    if (!init)
+		return;
+    
+	Update();
+	Render();
+}
+
+
+
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function doKeyUp(e) 
+{   
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+	if(e.keyCode == 37) left_arrow = false;
+	if(e.keyCode == 39) right_arrow = false;
+	if(e.keyCode == 38) up_arrow = false;
+	if(e.keyCode == 40) down_arrow = false;
+}
+
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex;
+	var yPos = (mouse_y-oy)/ ey;
+	
+	if(e.keyCode==32)
+	{
+		shoot =true;
+		
+	}
+	else
+	if(e.keyCode == 37) left_arrow = true;
+	if(e.keyCode == 39) right_arrow = true;
+	if(e.keyCode == 38) up_arrow = true;
+	if(e.keyCode == 40) down_arrow = true;
+
+	
+}
+function loadscene()
+{
+	// posicion y tamaño 
+	var OX = 2;
+	var OY = 2;
+	var DX = 70;
+	var DY = 40;
+	var r = 3;
+	
+
+	
+	//nave
+	var vector_nave = [new Vector2(45,45) , new Vector2(42,53) , new Vector2(48,53) ]
+    nave = _world.AddPoly(vector_nave,3);
+	nave.SetStatic = true;
+	nave.id = idNave;
+	nave.img =img_nave;
+	
+	//asteroides
+	var Vertice_asteroide = [new Vector2(45,-1), new Vector2(47,-1), new Vector2(48,-2), new Vector2(48,-3), new Vector2(47,-4), new Vector2(45,-4), new Vector2(44,-3), new Vector2(44,-2)];
+	asteroide_1 =	_world.AddPoly(Vertice_asteroide, 8);
+	asteroide_1.visible = false;
+	asteroide_1.id = idAsteroide;
+    asteroide_1.img = img_asteroide;
+	
+	asteroide_2 =	_world.AddPoly(Vertice_asteroide, 8);
+	asteroide_2.visible = false;
+	asteroide_2.id = idAsteroide;
+    asteroide_2.img = img_asteroide;
+	
+
+	
+	asteroide_3 =	_world.AddPoly(Vertice_asteroide, 8);
+	asteroide_3.visible = false;
+	asteroide_3.id = idAsteroide;
+    asteroide_3.img = img_asteroide;	
+	//bala
+	bala = _world.AddBox(45,45,0.5,5);
+	bala.visible = false;
+	 
+	bala.id = idBala;
+	bala.img = img_bala;	
+
+	
+	
+	//enemigo con rotacion
+	centro = _world.AddCircle(100,20,2);
+	met = _world.AddCircle(100,2,3);
+	centro.visible= false;
+	var pC = _world.AddJointConstraint(met,centro);
+	pC.visible = false;
+	met.img= img_met;
+	
+	
+	met.id= idMet;
+	met.collider_list=[bala];
+	centro.collider_list=[met];
+	bala.collider_list = [asteroide_1,asteroide_2,asteroide_3,met];
+	asteroide_1.collider_list = [bala];
+	asteroide_2.collider_list = [bala];
+	asteroide_3.collider_list = [bala];
+	nave.collider_list = [asteroide_1];
+	gravity.y = 0;
+    init = true;
+
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener( "keyup", doKeyUp, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+	img_explosion.src = 'explosion.png';
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	img_explosion.src = 'explosion.png';
+	img_nave.src = 'nave.png';
+	img_asteroide.src = 'asteroide.png';
+	img_bala.src = 'bala.png';
+	img_fondo.src =  'fondo.png';
+	img_met.src =  'meteoro.png';
+	loadscene();
+    setInterval(RenderLoop, elapsed_time * 1000);
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="1000" height="900"></canvas>
+</body>
+</html>
+ 

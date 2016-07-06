@@ -1,0 +1,777 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+
+<script type="text/javascript" src="../engine/math.js"></script>
+<script type="text/javascript" src="../engine/body.js"></script>
+<script type="text/javascript" src="../engine/world.js"></script>
+<script type="text/javascript" src="../engine/collision.js"></script>
+<script type="text/javascript" src="../engine/contact.js"></script>
+<script type="text/javascript" src="../engine/constraint.js"></script>
+<script type="text/javascript" src="../engine/ragdoll.js"></script>
+
+<script type="text/javascript">
+
+var elapsed_time = 1/60;
+var canvas;
+var ctx;
+var	ex = 10;
+var ey = 10;
+var ox = 20;
+var oy = 20;
+
+// pos y tamaño de pantalla
+var OX = 0;
+var OY = 1;
+var DX = 86;
+var DY = 55;
+
+// posicion del cañon
+var cannon_x = 7;
+var cannon_y = 49.3;
+
+// posicion del mouse
+var mouse_x = 0;
+var mouse_y = 0;
+
+var gravity = new Vector2( 0, 40 );
+var fixed_dt = 1.0/60.0;								// avance del tiempo constante
+var _world = new World();
+var _body = new Body();
+var init = false;
+var pause = false;
+
+//general
+var cannon;
+var ball;
+var dist = 0;
+var k = 0;
+var altpot = 20;
+var altpot2 = 14;
+var vidas = 4;
+var cont = 0;
+var contobs = 0;
+var objs = 2;
+var velimg = 20;
+var objetivos = 0;
+
+//timers
+var timerv = 0;
+var timerw = 0;
+var timerexp = 0;
+var timerexp2 = 0;
+
+//posiciones
+var posp_x = 0;
+var posp_y = 0;
+var posp_x2 = 0;
+var posp_y2 = 0;
+
+//IDs
+var idBall = 1;
+var idTNT = 2;
+var idPilar = 3;
+
+//flagscores
+var flagscore = true;
+var flagscore2 = true;
+var flagscoreinit = true;
+var flagscoredraw = false;
+var flagscorewin = false;
+var flagscoreexp = true;
+var flagscorescene = false;
+var flagscoreerror1 = true;
+var flagscoreerror2 = false;
+var flagscorelevel1 = true;
+var flagscorelevel2 = false;
+
+var fondo = new Image();
+var base = new Image();
+var cañon = new Image();
+var suelo = new Image();
+var bala = new Image();
+var pilar = new Image();
+var pilar2 = new Image();
+var metal = new Image();
+var tnt = new Image();
+var exp = new Image();
+var colch = new Image();
+
+function Update() 
+{
+    _world.Update(elapsed_time);
+	
+	// manejo al trayectoria de la bala y la inclinacion y potencia del canion
+	var angulo = Math.atan2(mouse_y-cannon_y*ey-oy, mouse_x-cannon_x*ex-ox);
+	
+	if(angulo <= -90*Math.PI/180)
+	{
+		angulo = -90*Math.PI/180;
+	}
+	
+	if(angulo > 0)
+	{
+		angulo = 0;
+	}
+	
+	cannon.SetOrient(angulo);
+	
+	dist = Math.sqrt((mouse_x - cannon_x * ex) * (mouse_x - cannon_x * ex) + (mouse_y - cannon_y * ey) * (mouse_y - cannon_y * ey))
+	
+	k = dist * 0.20000;
+	
+	if(k < 40)
+	{
+		k = 40;
+	}
+	else
+	{
+		if(k > 100)
+		{
+			k = 100;
+		}
+	}
+	
+	altpot = 20 - k * 2;
+	altpot2 = 14 - k * 2;
+	
+	// manejo las vidas
+	if(vidas == 0 && flagscore == true)
+	{
+		timerv = 0.01;
+		flagscore = false;
+	}
+	
+	// pierdo el juego
+	if(timerv > 0)
+	{
+		timerv += elapsed_time;
+		if(timerv >= 5)
+		{
+			flagscore2 = false;
+			pause = true;
+		}
+	}
+	
+	// gano el juego
+	if(timerw > 0)
+	{
+		timerw += elapsed_time;
+		if(timerw >= 1.5)
+		{
+			pause = true;
+		}
+	}
+	
+	//pausa menu principal
+	if(flagscoreinit == true)
+	{
+		pause = true;
+	}
+	
+	// detecto las colisiones
+	for(var i = 0; i < _world.m_contactCount;i++)
+	{
+		var contact = _world.contacts[i];
+		if(contact.A.id == idBall && contact.B.id == idTNT)
+		{
+			if(flagscoreexp == true || contact.B.position.x > 30)
+			{
+					cont += 1;
+				if(flagscoreerror1 == true)
+				{
+					posp_x = contact.B.position.x;
+					posp_y = contact.B.position.y;
+					timerexp = 0.01;
+				}
+				if(flagscoreerror2 == true)
+				{
+					posp_x2 = contact.B.position.x;
+					posp_y2 = contact.B.position.y;
+					timerexp2 = 0.01;
+				}
+			}
+			contact.B.deleted = true;
+			contact.B.visible = false;
+			contact.A.deleted = true;
+			contact.A.visible = false;
+			flagscoreexp = false;
+		}
+		else
+		{
+			if(contact.A.id == idTNT && contact.B.id == idBall)
+			{
+				if(flagscoreexp == true || contact.A.position.x > 30)
+				{
+					posp_x = contact.A.position.x;
+					posp_y = contact.A.position.y;
+					cont += 1;
+					if(flagscoreerror1 == true)
+					{
+						timerexp = 0.01;
+					}
+					if(flagscoreerror2 == true)
+					{
+						timerexp2 = 0.01;
+					}
+				}
+				contact.A.deleted = true;
+				contact.A.visible = false;
+				contact.B.deleted = true;
+				contact.B.visible = false;
+				flagscoreexp = false;
+			}
+		}
+	}
+	
+	
+	// computo la explosion
+	if(timerexp > 0)
+	{
+		flagscoreerror1 = false;
+		flagscoreerror2 = true;
+		timerexp += velimg * elapsed_time;
+		if(timerexp >= 25.30)
+		{
+			timerexp = 0;
+			flagscoreexp = true;
+		}
+	}
+	
+	if(timerexp2 > 0)
+	{
+		flagscoreerror1 = true;
+		flagscoreerror2 = false;
+		timerexp2 += velimg * elapsed_time;
+		if(timerexp2 >= 25.30)
+		{
+			timerexp2 = 0;
+			flagscoreexp = true;
+		}
+	}
+	
+	// gano el nivel
+	if(cont >= objetivos && flagscorewin == false)
+	{
+		flagscorewin = true;
+		timerv = 0;
+		timerw = 0.01;
+	}
+	
+	// cargo al escena
+	if(flagscorescene == true)
+	{
+		objetivos -= objs;
+		loadscene();
+		flagscorescene = false;
+	}
+}
+
+function Render() 
+{
+    if (canvas.getContext)
+    {
+        // borro la pantalla
+        ctx.fillStyle = 'rgba(0,0,0,255)';
+        ctx.fillRect(0,0,2000,2000);
+
+		// dibujo el fondo
+		ctx.drawImage(fondo, 0,0,2000,2000);
+	
+		// dibujo la escena esquematica con el motor 
+	    _world.Render(ctx);
+		
+		// dibujo el suelo
+		ctx.drawImage(suelo, 0, 500, 1100, 120);
+		
+		// dibujo la base del cañon
+		ctx.drawImage(base, 35,480,120,100);
+		
+		// dibujo la barra de potencia
+		ctx.fillStyle = 'rgba(105,105,105,255)';
+		ctx.fillRect(37, 453, 16, altpot2);
+	
+		ctx.fillStyle = 'rgba(255,0,0,255)';
+		ctx.fillRect(40, 450, 10, altpot);
+		
+		var angulo = cannon.orient;
+		var posc_x = 65;
+		var posc_y = 460;
+		var c = Math.cos(angulo);
+		var s = Math.sin(angulo);
+		var off_x = -40;
+		var off_y = -60;
+		var x = DX - (DX - posc_x) - off_x;
+		var y = DY - (DY - posc_y) - off_y;
+		// dibujo el cañon
+		ctx.save();
+		ctx.setTransform(c, s, -s, c, c * (-x) - s * (-y) + x, s * (-x) + c * (-y) + y);
+		ctx.drawImage(cañon, posc_x,posc_y,100,80);
+		ctx.restore();
+		/*
+		ctx.font = "20px Arial"
+		ctx.fillText(dist,10,70);
+	
+		ctx.font = "20px Arial"
+		ctx.fillText(k,10,90);
+	
+		ctx.font = "20px Arial"
+		ctx.fillText(angulo*180/(2*Math.PI),10,110);
+	
+		ctx.font = "20px Arial"
+		ctx.fillText(vidas,10,130);
+		
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText("contobs", 10, 100)
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText(contobs, 10, 120)
+		
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText("objetos", 10, 140)
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText(objs, 10, 160)
+		*/
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText("objetivos", 10, 180)
+		ctx.fillStyle = 'rgba(255,255,255,255)';
+		ctx.font = "20px Arial"
+		ctx.fillText(objetivos, 10, 200)
+		
+		// dibujo la colchoneta
+		if(flagscorelevel2 == true)
+		{
+			/*ctx.save();
+			ctx.rotate(45* Math.PI /180);
+			ctx.drawImage(colch, 300, 300, 40, 70);
+			ctx.restore();*/
+		}
+		
+		
+		// dibujo las vidas
+		for (var i = 0; i < vidas; i++)
+		{
+			ctx.drawImage(bala, 10+35*i,10,35,35);
+		}
+	
+		// me quedo sin vidas
+		if(vidas == 0 && timerv >= 5)
+		{
+			ctx.fillStyle = 'rgba(255,0,0,0.5)';
+			ctx.fillRect(0,0,2000,2000);
+		
+			ctx.fillStyle = 'rgba(255,0,0,255)';
+			ctx.font = "60px Arial"
+			ctx.fillText('Game Over',300,150);
+		
+			ctx.fillStyle = 'rgba(105,105,105,255)';
+			ctx.fillRect(400,250,100,30);
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "20px Arial"
+			ctx.fillText('Try Again',407,273);
+		}
+	
+		// pauso el juego
+		if(pause == true && flagscore2 == true && !flagscoreinit && !flagscorewin)
+		{
+			ctx.fillStyle = 'rgba(105,105,105,0.7)';
+			ctx.fillRect(0,0,2000,2000);
+		
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "60px Arial"
+			ctx.fillText('Game Paused',280,150);
+		
+			ctx.fillStyle = 'rgba(105,105,105,255)';
+			ctx.fillRect(400,250,100,30);
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "20px Arial"
+			ctx.fillText('Continue',410,273);
+		}
+	
+		// menu principal
+		if(flagscoreinit == true)
+		{
+			ctx.fillStyle = 'rgba(105,105,105,0.7)';
+			ctx.fillRect(0,0,2000,2000);
+		
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "60px Arial"
+			ctx.fillText('Main Menu',300,150);
+		
+			ctx.fillStyle = 'rgba(105,105,105,255)';
+			ctx.fillRect(390,240,120,30);
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "20px Arial"
+			ctx.fillText('Play',430,263);
+		
+			ctx.fillStyle = 'rgba(105,105,105,255)';
+			ctx.fillRect(390,290,120,30);
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "20px Arial"
+			ctx.fillText('Instructions',400,313);
+		}
+	
+		if(flagscoredraw == true)
+		{
+			ctx.fillStyle = 'rgba(150,150,150,255)';
+			ctx.fillRect(300,100,300,250);
+		
+			ctx.fillStyle = 'rgba(105,105,105,255)';
+			ctx.fillRect(300,320,60,30);
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "20px Arial"
+			ctx.fillText('Back',307,343);
+		
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "23px Arial"
+			ctx.fillText('Para jugar se usa el mouse.',307,120);
+			ctx.fillText('Se apunta moviendolo, y se',307,150);
+			ctx.fillText('ajusta la potencia acercan-',307,180);
+			ctx.fillText('do o a lejandolo del cañon.',307,210);
+			ctx.fillText('Con la "P" se pone en pausa',307,270);
+		}
+		// dibujo la explosion
+		if (timerexp > 0)
+		{
+			ctx.drawImage(exp, 61*Math.floor(timerexp), 0, 61, 62, posp_x * ex - 30,posp_y * ey - 30, 100, 100);
+		}
+		
+		if (timerexp2 > 0)
+		{
+			ctx.drawImage(exp, 61*Math.floor(timerexp2), 0, 61, 62, posp_x2 * ex - 30,posp_y2 * ey - 30, 100, 100);
+		}
+		
+		// gano el juego
+		if(timerw >= 1.5 && flagscorewin == true)
+		{
+			ctx.fillStyle = 'rgba(255,255,255,0.5)';
+			ctx.fillRect(0,0,2000,2000);
+	
+			ctx.fillStyle = 'rgba(255,255,255,255)';
+			ctx.font = "60px Arial"
+			ctx.fillText('Level Complete',250,150);
+	
+			ctx.fillStyle = 'rgba(105,105,105,255)';
+			ctx.fillRect(380,250,112,30);
+			ctx.fillStyle = 'rgba(0,0,0,255)';
+			ctx.font = "20px Arial"
+			ctx.fillText('Next Level',390,273);
+		}
+		
+		
+	}
+	
+	
+}
+
+
+function RenderLoop() 
+{
+	
+		if (!init)
+			return;
+		
+		Render();
+		if(!pause)
+		{
+			Update();
+		}
+}
+
+function click()
+{
+	// computo el tiro parabolico
+	if(vidas > 0 && !pause)
+	{
+		gravity.y = 40;
+		vidas--;
+		var angulo = cannon.orient;
+		ball = _world.AddCircle(10 * Math.cos(angulo) + cannon_x, 10 * Math.sin(angulo) + cannon_y, 1.7);
+		ball.img = bala;
+		ball.id = idBall;
+		
+		ball.velocity.x = Math.cos(angulo)* k;
+		ball.velocity.y = Math.sin(angulo)* k;
+	}
+	else
+	{
+		// me quedo sin vidas
+		if(vidas == 0 && timerv >= 5)
+		{
+			// try again
+			if((mouse_x > 400 && mouse_x < 500)&&(mouse_y > 250 && mouse_y < 280))
+			{
+				cont = 0;
+				vidas = 4;
+				flagscore = true;
+				flagscore2 = true;
+				timerv = 0;
+				_world.m_bodyCount = 0;
+				/*for(var i = 0; i < _world.m_bodyCount;i++)
+				{
+					var bodys = _world.bodies[i];
+					bodys.deleted = true;
+					//bodys.visible = false;
+				}
+				*/
+				pause = false;
+				flagscorescene = true;
+			}
+		}
+	}
+	
+	// pauso el juego		
+	if(pause == true && flagscore2 == true && !flagscoreinit && !flagscorewin)
+	{
+		if((mouse_x > 400 && mouse_x < 500)&&(mouse_y > 250 && mouse_y < 280))
+		{
+			pause = false;
+		}
+	}
+	
+	// menu principal
+	if(flagscoreinit == true)
+	{
+		if((mouse_x > 390 && mouse_x < 510)&&(mouse_y > 240 && mouse_y < 270))
+		{
+			pause = false;
+			flagscoreinit = false;
+		}
+		else
+		{
+			if((mouse_x > 390 && mouse_x < 510)&&(mouse_y > 290 && mouse_y < 320))
+			{
+				flagscoredraw = true;
+			}
+		}
+		if(flagscoredraw == true)														// instrucciones
+		{
+			if((mouse_x > 300 && mouse_x < 360)&&(mouse_y > 320 && mouse_y < 350))
+				{
+					flagscoredraw = false;
+				}
+		}
+	}
+	// gano el juego
+	if(timerw >= 1.5 && flagscorewin == true)
+	{
+		if((mouse_x > 380 && mouse_x < 492)&&(mouse_y > 250 && mouse_y < 280))
+		{
+			timerw = 0;
+			flagscorewin = false;
+			pause = false;
+			cont = 0;
+			vidas = 4;
+			flagscore = true;
+			flagscorelevel1 = false;
+			flagscorelevel2 = true;
+			_world.m_bodyCount = 0;
+			/*for(var i = 0; i < _world.m_bodyCount;i++)
+				{
+					var bodys = _world.bodies[i];
+					bodys.deleted = true;
+					//bodys.visible = false;
+				}
+				*/
+			flagscorescene = true;
+		}
+	}
+	
+}
+function doKeyDown(e) 
+{
+	var xPos = (mouse_x-ox)/ ex; 
+	var yPos = (mouse_y-oy)/ ey; 
+	
+	if(e.keyCode == 80)
+	{
+		pause = !pause;
+	}
+}
+
+function onMouseMove() 
+{
+	var xPos = window.event.offsetX;
+	var yPos = window.event.offsetY;
+
+    // actualizo la posicion del mouse
+	mouse_x = xPos;
+	mouse_y = yPos;
+}
+
+function onMouseDown(e) {
+    e = e || window.event;
+    switch (e.which)
+    {
+        case 1:
+            // Left button
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+
+function onMouseUp(e) {
+    e = e || window.event;
+    switch (e.which) {
+        case 1:
+            // Left button
+			click();
+            break;
+        case 2:
+            // middle button
+            break;
+        case 3:
+            // right button
+            break;
+    }
+}
+
+function loadscene()
+{
+	// piso
+    var p = _world.AddBox(OX+DX/2,OY+DY-1.5,DX+4,2);
+    p.SetStatic();
+	//p.visible = false;
+	
+	var anchcan = 2;
+	cannon = _world.AddBox(cannon_x, cannon_y, anchcan, 3);
+	cannon.SetStatic();
+	
+	cannon.shape.SetCenterOfMass(new Vector2(-cannon_x/2, 0));
+	
+	if(flagscorelevel1 == true)
+	{
+		p = _world.AddBox(50,45,2,20);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(60,45,2,20);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(50,28,2,10);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(60,28,2,10);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(85,44,15,1.5);
+		p.SetStatic();
+		p.img = pilar2;
+		p.id = idPilar;
+		p = _world.AddBox(55,34,15,1.5);
+		p.img = metal;
+	
+	
+		var a = _world.AddBox(55,51.2,4,4);
+		a.img = tnt;
+		a.id = idTNT;
+		a = _world.AddBox(82,41.2,4,4);
+		a.img = tnt;
+		a.id = idTNT;
+	}
+	if(flagscorelevel2 == true)
+	{
+		p = _world.AddBox(50,32,2,10);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(60,32,2,10);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(50,10,2,30);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(60,10,2,30);
+		p.SetStatic();
+		p.img = pilar;
+		p.id = idPilar;
+		p = _world.AddBox(66,36.1,10,1.5);
+		p.SetStatic();
+		p.img = pilar2;
+		p.id = idPilar;
+		p = _world.AddBox(55,26,15,1.5);
+		p.img = metal;
+	
+	
+		var a = _world.AddBox(55,23,4,4);
+		a.img = tnt;
+		a.id = idTNT;
+		a = _world.AddBox(66,33.4,4,4);
+		a.img = tnt;
+		a.id = idTNT;
+	}
+	/*
+	var cont3 = -1;
+	for(var cont = 0; cont < 4; cont += 1)
+	{
+		cont3 += 1;
+		for(var cont2 = 0; cont2 < 4 - cont3; cont2 += 1)
+		{
+			p = _world.AddBox(OX+DX - 12 - cont2 * 12 - cont * 6,OY+DY - 4.5 - cont * 8.2,2,7);
+			p = _world.AddBox(OX+DX - 7.5 - cont2 * 12 - cont * 6,OY+DY - 4 - cont * 8.2,2,7);
+			p = _world.AddBox(OX+DX - 9.7 - cont2 * 12 - cont * 6,OY+DY - 8.5 - cont * 8.2,9,1.3);
+		}
+	}
+	*/
+	objetivos = 0;
+	for(var i = 0; i < _world.m_bodyCount; i++)
+	{
+		var dina = _world.bodies[i];
+		if(dina.id == idTNT)
+		{
+			objetivos += 1;
+		}
+	}
+	
+	
+    init = true;
+
+}
+
+function main()
+{   
+	document.addEventListener( "keydown", doKeyDown, true);
+	document.addEventListener("mousemove", onMouseMove, true);
+	document.addEventListener("mousedown", onMouseDown, true);
+	document.addEventListener("mouseup", onMouseUp, true);
+	fondo.src = 'background1.png';
+	base.src = 'canion1.png';
+	cañon.src = 'canion2.png';
+	suelo.src = 'arena.png';
+	bala.src = 'ball.png';
+	pilar.src = 'pilarmadera.png';
+	pilar2.src = 'pilarmaderarecostada.png';
+	metal.src = 'barrametal.png';
+	tnt.src = 'tnt.png';
+	exp.src = 'explosion.png';
+	colch.src = 'colchoneta.png';
+
+    canvas = document.getElementById('mycanvas');
+    ctx = canvas.getContext('2d');
+	loadscene();
+    setInterval(RenderLoop, elapsed_time * 1000);
+} 
+
+
+</script>
+</head>
+<body onload="main();">
+	<canvas id="mycanvas" width="900" height="600"></canvas>
+</body>
+</html>
+ 

@@ -105,7 +105,7 @@ GeoCircle.prototype.Render = function(body)
         ctx.stroke();
     }
     // dibujo el centro de gravedad
-    if(this.drawCM &&  body.inverseMass!=0)
+    if(this.drawCM)
         drawCenterOfMass(pos.x, pos.y, 0.5, body.orient);
 
 
@@ -364,7 +364,7 @@ GeoPolygon.prototype.Render = function(body)
     ctx.stroke();
 
     // dibujo el centro de gravedad
-    if (this.drawCM &&  body.inverseMass != 0)
+    if (body.inverseMass != 0)
         drawCenterOfMass(body.position.x, body.position.y, 0.5, body.orient);
 
 }

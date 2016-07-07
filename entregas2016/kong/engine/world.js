@@ -394,7 +394,7 @@ World.prototype.AddConstraint = function (A, B, dist) {
 
 World.prototype.AddDistanceConstraint = function(A,ptA , B,ptB)
 {
-    return this.constraints[this.m_constraintCount++] = CreateDistanceConstraint(A, ptA, B,ptB);
+    return this.constraints[this.m_constraintCount++] = CreateDistanceConstraint(A, pTa, B,ptB);
 }
 
 /**
